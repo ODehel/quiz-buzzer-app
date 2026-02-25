@@ -1,0 +1,52 @@
+<div class="home-container">
+  <div class="home-content">
+    <!-- Logo -->
+    <div class="logo-container">
+      <div class="logo-placeholder">
+        <h1>QuizBuzzer</h1>
+      </div>
+    </div>
+
+    <!-- Bouton Lancer -->
+    @if (!isLoading() && !errorMessage()) {
+      <div class="button-container">
+        <button class="btn btn-primary btn-lg launch-btn" (click)="launch()">
+          Lancer
+        </button>
+      </div>
+    }
+
+    <!-- Overlay de chargement -->
+    @if (isLoading()) {
+      <div class="loading-overlay">
+        <div class="loading-card">
+          <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <h4>Connexion au serveur...</h4>
+          <p class="text-muted">{{ currentStep() }}</p>
+          <p class="small">Veuillez patienter...</p>
+        </div>
+      </div>
+    }
+
+    <!-- Message d'erreur -->
+    @if (errorMessage() && !isLoading()) {
+      <div class="error-container">
+        <div class="alert alert-danger">
+          <h5>❌ {{ errorMessage() }}</h5>
+          <hr>
+          <p class="mb-3">Vérifiez que :</p>
+          <ol class="text-start">
+            <li>Le serveur Node.js est démarré (npm start)</li>
+            <li>Le serveur écoute sur http://localhost:3000</li>
+            <li>Aucun firewall ne bloque la connexion</li>
+          </ol>
+          <button class="btn btn-primary mt-2" (click)="retry()">
+            Réessayer
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

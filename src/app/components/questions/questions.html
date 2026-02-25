@@ -1,0 +1,122 @@
+<div class="questions-container">
+  <div class="header">
+    <h2>📝 Gestion des Questions</h2>
+    <button class="btn-create" (click)="openCreateForm()">+ Nouvelle Question</button>
+  </div>
+
+  <!-- Formulaire de création/édition -->
+  <div class="form-overlay" *ngIf="showForm">
+    <div class="form-card">
+      <h3>{{ editingQuestion ? 'Modifier la question' : 'Créer une question' }}</h3>
+
+      <div class="form-group">
+        <label>Type de question</label>
+        <select [(ngModel)]="newQuestion.type" (change)="onTypeChange()">
+          <option value="mcq">QCM (Choix multiple)</option>
+          <option value="buzzer">Rapidité (Buzzer)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Énoncé de la question</label>
+        <textarea [(ngModel)]="newQuestion.text" placeholder="Saisissez la question..." rows="3"></textarea>
+      </div>
+
+      <!-- Options pour QCM -->
+      <div *ngIf="newQuestion.type === 'mcq'" class="form-group">
+        <label>Options de réponse</label>
+        <div class="options-list">
+          <div class="option-item" *ngFor="let option of newQuestion.options; let i = index; trackBy: trackByIndex">
+            <input
+              type="radio"
+              [name]="'correctAnswer'"
+              [value]="i"
+              [(ngModel)]="newQuestion.correctAnswer"
+              title="Marquer comme bonne réponse"
+            />
+            <input
+              type="text"
+              [(ngModel)]="newQuestion.options![i]"
+              [placeholder]="'Option ' + (i + 1)"
+              class="option-input"
+            />
+            <button class="btn-remove-option" (click)="removeOption(i)" *ngIf="newQuestion.options!.length > 2" title="Supprimer">✕</button>
+          </div>
+        </div>
+        <button class="btn-add-option" (click)="addOption()">+ Ajouter une option</button>
+      </div>
+
+      <!-- Réponse attendue pour les questions buzzer -->
+      <div *ngIf="newQuestion.type === 'buzzer'" class="form-group">
+        <label>Réponse attendue</label>
+        <textarea
+          [(ngModel)]="newQuestion.expectedAnswer"
+          placeholder="Saisissez la réponse attendue pour guider le maître du jeu..."
+          rows="2"
+          class="expected-answer-input"
+        ></textarea>
+        <small class="hint">Cette réponse sera visible uniquement par le maître du jeu pendant la partie.</small>
+      </div>
+
+      <div class="form-group">
+        <label>Points</label>
+        <input type="number" [(ngModel)]="newQuestion.points" min="1" />
+      </div>
+
+      <div class="form-group">
+        <label>Temps limite (secondes)</label>
+        <input type="number" [(ngModel)]="newQuestion.timeLimit" min="5" max="120" />
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" (click)="resetForm()">Annuler</button>
+        <button class="btn-save" (click)="saveQuestion()" [disabled]="!newQuestion.text">
+          {{ editingQuestion ? 'Mettre à jour' : 'Créer la question' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des questions -->
+  <div class="questions-list">
+    <div class="question-card" *ngFor="let question of questions">
+      <div class="question-header">
+        <span class="question-type" [ngClass]="question.type">
+          {{ question.type === 'mcq' ? '📋 QCM' : '⚡ Rapidité' }}
+        </span>
+        <span class="question-points">{{ question.points }} pts</span>
+      </div>
+      <p class="question-text">{{ question.text }}</p>
+
+      <!-- Affichage des options pour QCM -->
+      <div *ngIf="question.type === 'mcq' && question.options" class="question-options">
+        <div
+          class="option-display"
+          *ngFor="let option of question.options; let i = index"
+          [ngClass]="{ 'correct': i === question.correctAnswer }"
+        >
+          {{ option }}
+          <span *ngIf="i === question.correctAnswer" class="correct-badge">✓</span>
+        </div>
+      </div>
+
+      <!-- Affichage de la réponse attendue pour buzzer -->
+      <div *ngIf="question.type === 'buzzer' && question.expectedAnswer" class="expected-answer-display">
+        <span class="expected-answer-label">📌 Réponse attendue :</span>
+        <span class="expected-answer-text">{{ question.expectedAnswer }}</span>
+      </div>
+
+      <div class="question-footer">
+        <span class="question-time">⏱ {{ question.timeLimit }}s</span>
+        <div class="question-actions">
+          <button class="btn-edit" (click)="openEditForm(question)">✏️ Modifier</button>
+          <button class="btn-delete" (click)="deleteQuestion(question.id!)">🗑️ Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="questions.length === 0" class="empty-state">
+      <p>Aucune question créée. Cliquez sur "Nouvelle Question" pour commencer.</p>
+    </div>
+  </div>
+</div>

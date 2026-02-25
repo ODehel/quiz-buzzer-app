@@ -1,0 +1,443 @@
+<div class="game-layout"
+     (mousemove)="onMouseMove($event)"
+     (mouseup)="onMouseUp()"
+     (mouseleave)="onMouseUp()">
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- BUZZERS DÉPLAÇABLES AUTOUR DE LA TABLE  -->
+  <!-- ═══════════════════════════════════════ -->
+  @for (buzzer of buzzers(); track buzzer.id) {
+    <div class="buzzer-card"
+         [class.buzzer-highlighted]="isBuzzerQuestion() && !hasPlayerAnswered(buzzer.id) && gameStatus() === 'question'"
+         [class.buzzer-answered]="hasPlayerAnswered(buzzer.id)"
+         [class.buzzer-excluded]="excludedPlayers().includes(buzzer.id)"
+         [class.buzzer-correct]="showCorrectAnswer() && isPlayerCorrect(buzzer.id)"
+         [class.buzzer-incorrect]="showCorrectAnswer() && hasPlayerAnswered(buzzer.id) && !isPlayerCorrect(buzzer.id)"
+         [style.left.px]="getBuzzerPosition(buzzer.id).x"
+         [style.top.px]="getBuzzerPosition(buzzer.id).y"
+         (mousedown)="onBuzzerMouseDown($event, buzzer.id)">
+
+      <div class="buzzer-header">
+        <span class="buzzer-icon">🎮</span>
+        <span class="buzzer-name">{{ buzzer.name }}</span>
+      </div>
+      <div class="buzzer-player">{{ getPlayerName(buzzer.id) || '—' }}</div>
+      <div class="buzzer-points">{{ getBuzzerScore(buzzer.id) }} pts</div>
+
+      <!-- Réponse du joueur -->
+      @if (hasPlayerAnswered(buzzer.id)) {
+        <div class="buzzer-answer"
+             [class.ans-a]="getPlayerAnswerIndex(buzzer.id) === 0"
+             [class.ans-b]="getPlayerAnswerIndex(buzzer.id) === 1"
+             [class.ans-c]="getPlayerAnswerIndex(buzzer.id) === 2"
+             [class.ans-d]="getPlayerAnswerIndex(buzzer.id) === 3"
+             [class.ans-buzz]="isBuzzerQuestion()">
+          @if (isBuzzerQuestion()) {
+            🔴 Buzz
+          } @else {
+            {{ ['A', 'B', 'C', 'D'][getPlayerAnswerIndex(buzzer.id)] }}
+          }
+        </div>
+        <div class="buzzer-time">
+          {{ (getPlayerResponseTime(buzzer.id) / 1000) | number:'1.1-1' }}s
+        </div>
+      } @else if (gameStatus() === 'question') {
+        <div class="buzzer-answer ans-waiting">⏳</div>
+      }
+
+      @if (isBuzzerQuestion() && !hasPlayerAnswered(buzzer.id) && gameStatus() === 'question' && !excludedPlayers().includes(buzzer.id)) {
+        <div class="buzzer-speed-badge">⚡ RAPIDITÉ</div>
+      }
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TABLE CENTRALE                          -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="table-area">
+    <div class="table-content">
+
+      <!-- ─── ÉTAT : En attente ─── -->
+      @if (gameStatus() === 'waiting') {
+        <div class="table-waiting">
+          <div class="waiting-icon">📋</div>
+          <h2>Question {{ questionIndex() + 1 }} / {{ totalQuestions() }}</h2>
+          <p class="waiting-subtitle">{{ buzzerCount() }} joueur(s) connecté(s)</p>
+          <button class="btn-game btn-start" (click)="sendQuestion()">
+            ▶ Envoyer la question
+          </button>
+        </div>
+      }
+
+      <!-- ─── ÉTAT : Question en cours ─── -->
+      @if (gameStatus() === 'question') {
+        @if (currentQuestion(); as question) {
+          <!-- Timer -->
+          <div class="timer-section">
+            <div class="timer-bar-container">
+              <div class="timer-bar-fill"
+                   [class.timer-ok]="timePercentage() > 50"
+                   [class.timer-warning]="timePercentage() > 20 && timePercentage() <= 50"
+                   [class.timer-danger]="timePercentage() <= 20"
+                   [class.timer-paused]="timerPaused"
+                   [style.width.%]="timePercentage()">
+              </div>
+            </div>
+            <div class="timer-text">
+              @if (timerPaused) {
+                ⏸️ {{ timeRemaining() }}s (pause)
+              } @else {
+                ⏱️ {{ timeRemaining() }}s
+              }
+            </div>
+          </div>
+
+          <!-- Badges question -->
+          <div class="question-badges">
+            @if (question.type === 'MCQ') {
+              <span class="q-badge q-badge-mcq">QCM</span>
+            } @else {
+              <span class="q-badge q-badge-buzzer">🔴 RAPIDITÉ</span>
+            }
+            @if (question.category) {
+              <span class="q-badge q-badge-cat">{{ question.category }}</span>
+            }
+            <span class="q-badge q-badge-pts">{{ question.points }} pts</span>
+            <span class="q-badge q-badge-count">📥 {{ answersReceived() }}/{{ buzzerCount() }}</span>
+          </div>
+
+          <!-- Intitulé -->
+          <div class="question-title">{{ question.text }}</div>
+
+          <!-- ═══ QCM : Propositions avec jauges ═══ -->
+          @if (question.type === 'MCQ' && question.answers) {
+            <div class="answers-section">
+              @for (answer of question.answers; track $index; let i = $index) {
+                <div class="answer-row"
+                     [class.answer-correct]="showCorrectAnswer() && i === question.correct_answer"
+                     [class.answer-incorrect]="showCorrectAnswer() && i !== question.correct_answer">
+
+                  <div class="answer-label-row">
+                    <span class="answer-letter"
+                          [class.letter-a]="i === 0"
+                          [class.letter-b]="i === 1"
+                          [class.letter-c]="i === 2"
+                          [class.letter-d]="i === 3"
+                          [class.letter-correct]="showCorrectAnswer() && i === question.correct_answer">
+                      {{ ['A', 'B', 'C', 'D'][i] }}
+                    </span>
+                    <span class="answer-text">{{ answer }}</span>
+                    <span class="answer-count-label">
+                      @if (answerCounts()[i] > 0) {
+                        {{ answerCounts()[i] }}
+                        @if (answersReceived() > 0) {
+                          <small>({{ (answerCounts()[i] / answersReceived() * 100) | number:'1.0-0' }}%)</small>
+                        }
+                      }
+                    </span>
+                  </div>
+
+                  <div class="answer-gauge-container">
+                    <div class="answer-gauge-fill"
+                         [class.gauge-a]="i === 0 && !showCorrectAnswer()"
+                         [class.gauge-b]="i === 1 && !showCorrectAnswer()"
+                         [class.gauge-c]="i === 2 && !showCorrectAnswer()"
+                         [class.gauge-d]="i === 3 && !showCorrectAnswer()"
+                         [class.gauge-correct]="showCorrectAnswer() && i === question.correct_answer"
+                         [class.gauge-incorrect]="showCorrectAnswer() && i !== question.correct_answer && answerCounts()[i] > 0"
+                         [style.width.%]="getAnswerBarWidth(i)">
+                    </div>
+                  </div>
+
+                  <!-- Noms des joueurs sous la barre -->
+                  @if (answerCounts()[i] > 0) {
+                    <div class="answer-players-row">
+                      @for (detail of answerDetails(); track detail.buzzerID) {
+                        @if (detail.answer === i) {
+                          <span class="player-chip"
+                                [class.chip-correct]="showCorrectAnswer() && detail.isCorrect"
+                                [class.chip-incorrect]="showCorrectAnswer() && !detail.isCorrect">
+                            {{ detail.playerName }}
+                            @if (showCorrectAnswer()) {
+                              ({{ (detail.responseTime / 1000) | number:'1.1-1' }}s)
+                            }
+                          </span>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ═══ BUZZER : Zone rapidité ═══ -->
+          @if (question.type === 'BUZZER') {
+            <div class="buzzer-zone-table">
+              <div class="buzzer-zone-icon">🔴</div>
+              <h3>En attente des buzzes...</h3>
+              <div class="buzzer-zone-players">
+                @for (buzzer of buzzers(); track buzzer.id) {
+                  @if (excludedPlayers().includes(buzzer.id)) {
+                    <span class="bz-player-tag bz-excluded">❌ {{ buzzer.name }}</span>
+                  } @else if (hasPlayerAnswered(buzzer.id)) {
+                    <span class="bz-player-tag bz-validated">✅ {{ buzzer.name }}</span>
+                  } @else {
+                    <span class="bz-player-tag bz-active">🔴 {{ buzzer.name }}</span>
+                  }
+                }
+              </div>
+              @if (answerDetails().length > 0) {
+                <div class="buzz-validated-list">
+                  <h5>Réponses validées :</h5>
+                  @for (detail of answerDetails(); track detail.buzzerID) {
+                    <span class="bz-player-tag bz-validated">
+                      ✅ {{ detail.playerName }} (+{{ detail.points }} pts, {{ (detail.responseTime / 1000) | number:'1.1-1' }}s)
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (allAnswered()) {
+            <div class="all-answered-badge">✅ Tous ont répondu !</div>
+          }
+        }
+      }
+
+      <!-- ─── ÉTAT : Résultats ─── -->
+      @if (gameStatus() === 'results') {
+        @if (currentQuestion(); as question) {
+          <div class="results-section">
+            <h3 class="results-title">📊 Résultats</h3>
+            <p class="results-question">{{ question.text }}</p>
+
+            @if (question.type === 'MCQ' && question.answers && question.correct_answer !== undefined) {
+              <div class="correct-answer-banner">
+                ✅ {{ ['A', 'B', 'C', 'D'][question.correct_answer] }}. {{ question.answers[question.correct_answer] }}
+              </div>
+            }
+            @if (question.type === 'BUZZER' && answerDetails().length === 0) {
+              <div class="no-answer-banner">❌ Personne n'a donné la bonne réponse</div>
+            }
+
+            @if (answerDetails().length > 0) {
+              <div class="results-table-wrapper">
+                <table class="results-table">
+                  <thead>
+                    <tr>
+                      <th>Joueur</th>
+                      <th>Réponse</th>
+                      <th>Résultat</th>
+                      <th>Temps</th>
+                      <th>Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (detail of answerDetails(); track detail.buzzerID) {
+                      <tr [class.row-correct]="detail.isCorrect" [class.row-incorrect]="!detail.isCorrect">
+                        <td><strong>{{ detail.playerName }}</strong></td>
+                        <td>
+                          @if (question.type === 'MCQ' && question.answers) {
+                            {{ ['A', 'B', 'C', 'D'][detail.answer] }}. {{ question.answers[detail.answer] }}
+                          } @else {
+                            🔴 Buzz
+                          }
+                        </td>
+                        <td>{{ detail.isCorrect ? '✅' : '❌' }}</td>
+                        <td>{{ (detail.responseTime / 1000) | number:'1.1-1' }}s</td>
+                        <td><strong>+{{ detail.points }}</strong></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- ─── ÉTAT : Classement ─── -->
+      @if (gameStatus() === 'ranking') {
+        <div class="ranking-section">
+          <h3 class="ranking-title">🏆 Classement</h3>
+          <div class="ranking-table-wrapper">
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th>Rang</th>
+                  <th>Joueur</th>
+                  <th>Score</th>
+                  <th>Bonnes rép.</th>
+                  <th>Temps moy.</th>
+                  <th>+ rapide</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (player of ranking(); track player.buzzerID; let i = $index) {
+                  <tr [class.rank-gold]="i === 0" [class.rank-silver]="i === 1" [class.rank-bronze]="i === 2">
+                    <td class="rank-cell">
+                      @switch (i) {
+                        @case (0) { 🥇 }
+                        @case (1) { 🥈 }
+                        @case (2) { 🥉 }
+                        @default { {{ i + 1 }} }
+                      }
+                    </td>
+                    <td><strong>{{ player.name }}</strong></td>
+                    <td><strong>{{ player.score }}</strong> pts</td>
+                    <td>
+                      {{ player.correctAnswers }}/{{ player.totalAnswers }}
+                      @if (player.totalAnswers > 0) {
+                        <small>({{ (player.correctAnswers / player.totalAnswers * 100) | number:'1.0-0' }}%)</small>
+                      }
+                    </td>
+                    <td>
+                      @if (player.avgResponseTime > 0) {
+                        {{ (player.avgResponseTime / 1000) | number:'1.1-1' }}s
+                      } @else { — }
+                    </td>
+                    <td>
+                      @if (player.fastestResponseTime > 0) {
+                        {{ (player.fastestResponseTime / 1000) | number:'1.1-1' }}s
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- ─── ÉTAT : Partie terminée ─── -->
+      @if (gameStatus() === 'ended') {
+        <div class="ended-section">
+          <h2 class="ended-title">🎉 Partie terminée !</h2>
+          <div class="ranking-table-wrapper">
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th>Rang</th>
+                  <th>Joueur</th>
+                  <th>Score</th>
+                  <th>Bonnes rép.</th>
+                  <th>Temps moy.</th>
+                  <th>+ rapide</th>
+                  <th>+ lent</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (player of ranking(); track player.buzzerID; let i = $index) {
+                  <tr [class.rank-gold]="i === 0" [class.rank-silver]="i === 1" [class.rank-bronze]="i === 2">
+                    <td class="rank-cell">
+                      @switch (i) {
+                        @case (0) { 🥇 }
+                        @case (1) { 🥈 }
+                        @case (2) { 🥉 }
+                        @default { {{ i + 1 }} }
+                      }
+                    </td>
+                    <td><strong>{{ player.name }}</strong></td>
+                    <td><strong>{{ player.score }}</strong> pts</td>
+                    <td>
+                      {{ player.correctAnswers }}/{{ player.totalAnswers }}
+                      @if (player.totalAnswers > 0) {
+                        <small>({{ (player.correctAnswers / player.totalAnswers * 100) | number:'1.0-0' }}%)</small>
+                      }
+                    </td>
+                    <td>
+                      @if (player.avgResponseTime > 0) {
+                        {{ (player.avgResponseTime / 1000) | number:'1.1-1' }}s
+                      } @else { — }
+                    </td>
+                    <td>
+                      @if (player.fastestResponseTime > 0) {
+                        {{ (player.fastestResponseTime / 1000) | number:'1.1-1' }}s
+                      } @else { — }
+                    </td>
+                    <td>
+                      @if (player.slowestResponseTime > 0) {
+                        {{ (player.slowestResponseTime / 1000) | number:'1.1-1' }}s
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- BARRE DE CONTRÔLE EN BAS               -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="controls-bar">
+    <div class="controls-left">
+      <span class="controls-info">
+        🎮 Question {{ questionIndex() + 1 }}/{{ totalQuestions() }}
+        &nbsp;·&nbsp;
+        🎯 {{ buzzerCount() }} joueurs
+      </span>
+    </div>
+    <div class="controls-center">
+      @if (gameStatus() === 'question') {
+        <button class="btn-ctrl btn-ctrl-warning" (click)="showResults()">
+          ⏭️ Terminer la question
+        </button>
+      }
+      @if (gameStatus() === 'results') {
+        <button class="btn-ctrl btn-ctrl-info" (click)="showRanking()">
+          🏆 Classement
+        </button>
+        <button class="btn-ctrl btn-ctrl-success" (click)="nextQuestion()">
+          ⏭️ Question suivante
+        </button>
+      }
+      @if (gameStatus() === 'ranking') {
+        <button class="btn-ctrl btn-ctrl-success" (click)="nextQuestion()">
+          ⏭️ Question suivante
+        </button>
+      }
+      @if (gameStatus() === 'ended') {
+        <button class="btn-ctrl btn-ctrl-info" (click)="endGame()">
+          📊 Résultats détaillés
+        </button>
+      }
+    </div>
+    <div class="controls-right">
+      <button class="btn-ctrl btn-ctrl-danger" (click)="endGame()">
+        ⏹️ Terminer
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- MODALE BUZZER                           -->
+  <!-- ═══════════════════════════════════════ -->
+  @if (showBuzzModal() && buzzWinner(); as winner) {
+    <div class="buzz-modal-overlay">
+      <div class="buzz-modal">
+        <div class="buzz-modal-icon">🔴</div>
+        <h2 class="buzz-modal-title">{{ winner.playerName }} répond !</h2>
+        <p class="buzz-modal-time">
+          Temps : <strong>{{ (winner.responseTime / 1000) | number:'1.2-2' }}s</strong>
+        </p>
+        <div class="buzz-modal-actions">
+          <button class="btn-ctrl btn-ctrl-success btn-ctrl-lg" (click)="confirmBuzzCorrect()">
+            ✅ Bonne réponse
+          </button>
+          <button class="btn-ctrl btn-ctrl-danger btn-ctrl-lg" (click)="reopenBuzzer()">
+            🔄 Redonner la main
+          </button>
+        </div>
+        <div class="buzz-modal-timer">
+          ⏸️ Chrono en pause — {{ timeRemaining() }}s restantes
+        </div>
+      </div>
+    </div>
+  }
+</div>

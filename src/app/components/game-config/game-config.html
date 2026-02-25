@@ -1,0 +1,172 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>⚙️ Configurer la partie</h2>
+    <button class="btn btn-outline-secondary" (click)="goBack()">← Retour au lobby</button>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">
+      ❌ {{ errorMessage() }}
+      @if (buzzerCount() === 0) {
+        <br><button class="btn btn-primary mt-2" (click)="goBack()">← Retour au lobby</button>
+      }
+    </div>
+  }
+
+  <div class="row">
+    <!-- Colonne gauche : Configuration -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">🎯 Paramètres</h5>
+        </div>
+        <div class="card-body">
+          <!-- Nom de la partie -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nom de la partie</label>
+            <input
+              type="text"
+              class="form-control"
+              [value]="gameName()"
+              (input)="gameName.set($any($event.target).value)">
+          </div>
+
+          <!-- Durée QCM -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              ⏱️ Durée QCM : {{ mcqDuration() }}s
+            </label>
+            <input
+              type="range"
+              class="form-range"
+              min="10" max="60" step="5"
+              [value]="mcqDuration()"
+              (input)="mcqDuration.set(+$any($event.target).value)">
+            <div class="d-flex justify-content-between">
+              <small class="text-muted">10s</small>
+              <small class="text-muted">60s</small>
+            </div>
+          </div>
+
+          <!-- Durée Buzzer -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              🔴 Durée Buzzer : {{ buzzerDuration() }}s
+            </label>
+            <input
+              type="range"
+              class="form-range"
+              min="5" max="30" step="5"
+              [value]="buzzerDuration()"
+              (input)="buzzerDuration.set(+$any($event.target).value)">
+            <div class="d-flex justify-content-between">
+              <small class="text-muted">5s</small>
+              <small class="text-muted">30s</small>
+            </div>
+          </div>
+
+          <!-- Résumé -->
+          <hr>
+          <div class="small">
+            <p class="mb-1">🎮 Buzzers : <strong>{{ buzzerCount() }}</strong></p>
+            <p class="mb-1">📋 Questions : <strong>{{ selectedCount() }}/{{ questions().length }}</strong></p>
+            <p class="mb-0">
+              ⏱️ Durée estimée :
+              <strong>~{{ selectedCount() * ((mcqDuration() + buzzerDuration()) / 2 + 15) | number:'1.0-0' }}s</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Joueurs inscrits -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">👥 Joueurs ({{ buzzerCount() }})</h5>
+        </div>
+        <div class="card-body p-0">
+          @for (buzzer of buzzers(); track buzzer.id; let i = $index) {
+            <div class="d-flex align-items-center p-2 border-bottom">
+              <span class="badge bg-primary me-2">{{ i + 1 }}</span>
+              <span class="flex-grow-1">{{ buzzer.name }}</span>
+              <small class="text-muted">{{ buzzer.id }}</small>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Bouton lancer -->
+      <button
+        class="btn btn-success btn-lg w-100 mb-4"
+        (click)="createAndStartGame()"
+        [disabled]="isLoading() || !canStart()">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Lancement en cours...
+        } @else if (!canStart()) {
+          ⏳ Sélectionnez des questions et connectez des buzzers
+        } @else {
+          🚀 Lancer la partie !
+        }
+      </button>
+    </div>
+
+    <!-- Colonne droite : Questions -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">📋 Sélection des questions ({{ selectedCount() }})</h5>
+          <button class="btn btn-sm btn-outline-primary" (click)="toggleAll()">
+            @if (selectedQuestionIds().size === questions().length) {
+              Tout désélectionner
+            } @else {
+              Tout sélectionner
+            }
+          </button>
+        </div>
+        <div class="card-body p-0">
+          @if (isLoading()) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
+            </div>
+          } @else if (questions().length === 0) {
+            <div class="text-center py-4 text-muted">
+              <p>Aucune question disponible</p>
+              <button class="btn btn-primary" (click)="goBack()">
+                Créer des questions d'abord
+              </button>
+            </div>
+          } @else {
+            @for (question of questions(); track question.id; let i = $index) {
+              <div
+                class="question-item d-flex align-items-start p-3 border-bottom"
+                [class.selected]="isSelected(question.id)"
+                (click)="toggleQuestion(question.id)">
+                <input
+                  type="checkbox"
+                  class="form-check-input mt-1 me-3"
+                  [checked]="isSelected(question.id)"
+                  (click)="$event.stopPropagation()">
+                <div class="flex-grow-1">
+                  <p class="mb-1">
+                    <strong>{{ i + 1 }}.</strong> {{ question.text }}
+                  </p>
+                  <div>
+                    @if (question.type === 'MCQ') {
+                      <span class="badge bg-primary me-1">QCM</span>
+                    } @else {
+                      <span class="badge bg-warning text-dark me-1">Buzzer</span>
+                    }
+                    @if (question.category) {
+                      <span class="badge bg-secondary me-1">{{ question.category }}</span>
+                    }
+                    <span class="badge bg-light text-dark">{{ question.points }} pts</span>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

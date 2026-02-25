@@ -1,0 +1,142 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center my-4">
+        <div>
+          <h2 class="mb-0">QuizBuzzer - Lobby</h2>
+          <small class="text-muted">
+            @if (isConnected()) {
+              🟢 Connecté au serveur
+            } @else {
+              🔴 Déconnecté du serveur
+            }
+          </small>
+        </div>
+        <div>
+          <button class="btn btn-outline-danger" (click)="logout()">
+            🚪 Déconnexion
+          </button>
+        </div>
+      </div>
+
+      <!-- Compteur de buzzers -->
+      <div class="alert" [class.alert-info]="buzzerCount() > 0" [class.alert-secondary]="buzzerCount() === 0">
+        <h4 class="mb-0">
+          🎮 Buzzers connectés : <strong>{{ buzzerCount() }}/10</strong>
+        </h4>
+      </div>
+
+      <!-- Liste des buzzers -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title mb-4">Joueurs</h5>
+
+          <!-- Aucun buzzer -->
+          @if (buzzerCount() === 0) {
+            <div class="text-center py-5 text-muted">
+              <div class="mb-3" style="font-size: 48px;">📡</div>
+              <p class="lead">Aucun buzzer connecté</p>
+              <p>En attente des buzzers...</p>
+              <p class="small">
+                Allumez les buzzers et configurez-les via NFC<br>
+                ou lancez le simulateur de buzzers
+              </p>
+            </div>
+          }
+
+          <!-- Table des buzzers -->
+          @if (buzzerCount() > 0) {
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Buzzer ID</th>
+                  <th>Nom du joueur</th>
+                  <th>Statut</th>
+                  <th>Batterie</th>
+                  <th>Latence</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (buzzer of buzzers(); track buzzer.id; let i = $index) {
+                  <tr>
+                    <td><strong>{{ i + 1 }}</strong></td>
+                    <td><code>{{ buzzer.id }}</code></td>
+                    <td>
+                      <strong>{{ buzzer.name }}</strong>
+                      @if (buzzer.name === 'En attente de nom') {
+                        <span class="badge bg-warning text-dark ms-2">À renommer</span>
+                      }
+                    </td>
+                    <td>
+                      @if (buzzer.connected) {
+                        <span class="badge bg-success">🟢 Connecté</span>
+                      } @else {
+                        <span class="badge bg-danger">🔴 Déconnecté</span>
+                      }
+                    </td>
+                    <td>
+                      @if (buzzer.battery) {
+                        @if (buzzer.battery > 50) {
+                          <span class="text-success">🔋 {{ buzzer.battery }}%</span>
+                        } @else if (buzzer.battery > 20) {
+                          <span class="text-warning">🔋 {{ buzzer.battery }}%</span>
+                        } @else {
+                          <span class="text-danger">🪫 {{ buzzer.battery }}%</span>
+                        }
+                      } @else {
+                        <span class="text-muted">-</span>
+                      }
+                    </td>
+                    <td>
+                      @if (buzzer.latency) {
+                        {{ buzzer.latency }} ms
+                      } @else {
+                        <span class="text-muted">-</span>
+                      }
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-primary me-1" (click)="renamePlayer(buzzer)">
+                        ✏️ Renommer
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" (click)="disconnectBuzzer(buzzer)">
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Actions</h5>
+          <div class="d-flex flex-wrap gap-3">
+            <!-- Bouton Démarrer -->
+            <button
+              class="btn btn-success btn-lg"
+              (click)="goToGameConfig()"
+              [disabled]="!hasEnoughPlayers()">
+              @if (hasEnoughPlayers()) {
+                🚀 Démarrer une partie
+              } @else {
+                ⏳ En attente de joueurs (min 1)
+              }
+            </button>
+
+            <!-- Gérer les questions -->
+            <button class="btn btn-outline-primary btn-lg" (click)="goToQuestions()">
+              📋 Gérer les questions
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

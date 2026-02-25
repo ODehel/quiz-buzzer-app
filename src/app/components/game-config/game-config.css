@@ -1,0 +1,20 @@
+.container {
+  max-width: 1200px;
+}
+
+.question-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.question-item:hover {
+  background-color: #f8f9fa;
+}
+
+.question-item.selected {
+  background-color: #e7f3ff;
+}
+
+.card {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}

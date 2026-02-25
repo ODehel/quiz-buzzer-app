@@ -1,0 +1,82 @@
+<div class="container mt-4">
+  <h2 class="mb-4">📊 Résultats détaillés</h2>
+
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="mt-2">Chargement des résultats...</p>
+    </div>
+  } @else {
+    <!-- Classement final -->
+    <div class="card mb-4">
+      <div class="card-header bg-warning">
+        <h4 class="mb-0">🏆 Classement final</h4>
+      </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Rang</th>
+              <th>Joueur</th>
+              <th>Score</th>
+              <th>Bonnes rép.</th>
+              <th>Temps moyen</th>
+              <th>Plus rapide</th>
+              <th>Plus lent</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (player of ranking(); track player.buzzerID; let i = $index) {
+              <tr [class.table-warning]="i === 0">
+                <td>
+                  @switch (i) {
+                    @case (0) { 🥇 }
+                    @case (1) { 🥈 }
+                    @case (2) { 🥉 }
+                    @default { {{ i + 1 }} }
+                  }
+                </td>
+                <td><strong>{{ player.name }}</strong></td>
+                <td><strong>{{ player.score }}</strong> pts</td>
+                <td>
+                  {{ player.correctAnswers }}/{{ player.totalAnswers }}
+                  @if (player.totalAnswers > 0) {
+                    ({{ ((player.correctAnswers / player.totalAnswers) * 100) | number:'1.0-0' }}%)
+                  }
+                </td>
+                <td>
+                  @if (player.avgResponseTime > 0) {
+                    {{ (player.avgResponseTime / 1000) | number:'1.1-1' }}s
+                  } @else {
+                    -
+                  }
+                </td>
+                <td>
+                  @if (player.fastestResponseTime > 0) {
+                    {{ (player.fastestResponseTime / 1000) | number:'1.1-1' }}s
+                  } @else {
+                    -
+                  }
+                </td>
+                <td>
+                  @if (player.slowestResponseTime > 0) {
+                    {{ (player.slowestResponseTime / 1000) | number:'1.1-1' }}s
+                  } @else {
+                    -
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <div class="text-muted small mt-2">
+          📊 Critères de classement :
+          <strong>1.</strong> Score →
+          <strong>2.</strong> Temps moyen →
+          <strong>3.</strong> Temps le plus rapide
+        </div>
+      </div>
+    </div>
+  }
+</div>
