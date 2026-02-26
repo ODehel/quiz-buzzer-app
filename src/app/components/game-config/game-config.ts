@@ -44,14 +44,17 @@ export class GameConfigComponent implements OnInit {
     this.loadQuestions();
   }
 
+  private getValidQuestionIds(questions: { id?: number }[]): Set<number> {
+    return new Set<number>(questions.map(q => q.id).filter((id): id is number => id !== undefined));
+  }
+
   loadQuestions(): void {
     this.isLoading.set(true);
     this.apiService.getQuestions().subscribe({
       next: (questions) => {
         this.questions.set(questions);
         // Sélectionner toutes les questions par défaut
-        const allIds = new Set(questions.map(q => q.id));
-        this.selectedQuestionIds.set(allIds);
+        this.selectedQuestionIds.set(this.getValidQuestionIds(questions));
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -61,7 +64,8 @@ export class GameConfigComponent implements OnInit {
     });
   }
 
-  toggleQuestion(questionId: number): void {
+  toggleQuestion(questionId: number | undefined): void {
+    if (questionId === undefined) return;
     this.selectedQuestionIds.update(ids => {
       const newIds = new Set(ids);
       if (newIds.has(questionId)) {
@@ -77,11 +81,12 @@ export class GameConfigComponent implements OnInit {
     if (this.selectedQuestionIds().size === this.questions().length) {
       this.selectedQuestionIds.set(new Set());
     } else {
-      this.selectedQuestionIds.set(new Set(this.questions().map(q => q.id)));
+      this.selectedQuestionIds.set(this.getValidQuestionIds(this.questions()));
     }
   }
 
-  isSelected(questionId: number): boolean {
+  isSelected(questionId: number | undefined): boolean {
+    if (questionId === undefined) return false;
     return this.selectedQuestionIds().has(questionId);
   }
 
