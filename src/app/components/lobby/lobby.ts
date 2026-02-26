@@ -145,6 +145,13 @@ export class LobbyComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Aller à la gestion des jingles
+   */
+  goToJingles(): void {
+    this.router.navigate(['/jingles']);
+  }
+
+  /**
    * Se déconnecter
    */
   logout(): void {

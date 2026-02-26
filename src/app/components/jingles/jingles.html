@@ -1,0 +1,73 @@
+<div class="jingles-container">
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goBack()">← Retour</button>
+      <h2>🎵 Gestion des Jingles</h2>
+    </div>
+    <button class="btn-create" (click)="openCreateForm()">+ Nouveau Jingle</button>
+  </div>
+
+  <!-- Formulaire de création/édition -->
+  <div class="form-overlay" *ngIf="showForm">
+    <div class="form-card">
+      <h3>{{ editingJingle ? 'Modifier le jingle' : 'Créer un jingle' }}</h3>
+
+      <div class="form-group">
+        <label>Nom du jingle *</label>
+        <input type="text" [(ngModel)]="newJingle.name" placeholder="Ex: Fanfare victoire" />
+      </div>
+
+      <div class="form-group">
+        <label>Chemin du fichier *</label>
+        <input type="text" [(ngModel)]="newJingle.filePath" placeholder="Ex: /sounds/fanfare.mp3" />
+      </div>
+
+      <div class="form-group">
+        <label>Durée (secondes)</label>
+        <input type="number" [(ngModel)]="newJingle.duration" min="1" placeholder="Ex: 5" />
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea [(ngModel)]="newJingle.description" placeholder="Description optionnelle..." rows="3"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" (click)="resetForm()">Annuler</button>
+        <button class="btn-save" (click)="saveJingle()" [disabled]="!newJingle.name || !newJingle.filePath">
+          {{ editingJingle ? 'Mettre à jour' : 'Créer le jingle' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des jingles -->
+  <div class="jingles-list">
+    <div class="jingle-card" *ngFor="let jingle of jingles">
+      <div class="jingle-header">
+        <span class="jingle-icon">🎵</span>
+        <span class="jingle-name">{{ jingle.name }}</span>
+        @if (jingle.duration) {
+          <span class="jingle-duration">{{ jingle.duration }}s</span>
+        }
+      </div>
+
+      <p class="jingle-filepath">{{ jingle.filePath }}</p>
+
+      @if (jingle.description) {
+        <p class="jingle-description">{{ jingle.description }}</p>
+      }
+
+      <div class="jingle-footer">
+        <div class="jingle-actions">
+          <button class="btn-edit" (click)="openEditForm(jingle)">✏️ Modifier</button>
+          <button class="btn-delete" (click)="deleteJingle(jingle.id)">🗑️ Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="jingles.length === 0" class="empty-state">
+      <p>Aucun jingle créé. Cliquez sur "Nouveau Jingle" pour commencer.</p>
+    </div>
+  </div>
+</div>

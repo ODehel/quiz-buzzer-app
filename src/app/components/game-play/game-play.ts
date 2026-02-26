@@ -6,6 +6,7 @@ import { ApiService } from '../../services/api';
 import { WebsocketService } from '../../services/websocket';
 import { GameService } from '../../services/game';
 import { Question } from '../../models/question.model';
+import { Jingle } from '../../models/jingle.model';
 
 interface AnswerDetail {
   buzzerID: string;
@@ -66,6 +67,11 @@ export class GamePlayComponent implements OnInit, OnDestroy {
   buzzerCount = this.gameService.buzzerCount;
   buzzers = this.gameService.buzzers;
 
+  // Jingles
+  jingles = signal<Jingle[]>([]);
+  openJingleMenu = signal<string | null>(null);
+  jingleSending = signal<string | null>(null);
+
   answersReceived = computed(() => this.answerDetails().length);
   allAnswered = computed(() => this.answersReceived() >= this.buzzerCount());
 
@@ -102,6 +108,11 @@ export class GamePlayComponent implements OnInit, OnDestroy {
     }
 
     this.initializeBuzzerPositions();
+
+    this.apiService.getJingles().subscribe({
+      next: (jingles) => this.jingles.set(jingles),
+      error: (err) => console.error('Error loading jingles:', err)
+    });
 
     this.subscription.add(
       this.websocketService.messages$.subscribe(message => {
@@ -219,6 +230,36 @@ export class GamePlayComponent implements OnInit, OnDestroy {
 
   onMouseUp(): void {
     this.draggingBuzzerId = null;
+  }
+
+  toggleJingleMenu(buzzerID: string, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.openJingleMenu() === buzzerID) {
+      this.openJingleMenu.set(null);
+    } else {
+      this.openJingleMenu.set(buzzerID);
+    }
+  }
+
+  playJingle(buzzerID: string, jingleId: number): void {
+    this.jingleSending.set(buzzerID);
+    this.openJingleMenu.set(null);
+
+    this.websocketService.send('JINGLE_PLAY', {
+      buzzerID,
+      jingleId,
+    });
+
+    setTimeout(() => {
+      if (this.jingleSending() === buzzerID) {
+        this.jingleSending.set(null);
+      }
+    }, 2000);
+  }
+
+  closeJingleMenu(): void {
+    this.openJingleMenu.set(null);
   }
 
   // ═══════════════════════════════════════
@@ -441,6 +482,20 @@ export class GamePlayComponent implements OnInit, OnDestroy {
 
       case 'QUESTION_SENT':
         console.log(`[Game] Question sent to ${message.payload.sentTo} buzzers`);
+        break;
+
+      case 'JINGLE_STARTED':
+        console.log(`[Jingle] Streaming started to ${message.payload.buzzerID}`);
+        break;
+
+      case 'JINGLE_COMPLETED':
+        console.log(`[Jingle] Streaming completed to ${message.payload.buzzerID}`);
+        this.jingleSending.set(null);
+        break;
+
+      case 'JINGLE_ERROR':
+        console.error(`[Jingle] Error: ${message.payload.error}`);
+        this.jingleSending.set(null);
         break;
     }
   }

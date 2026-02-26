@@ -1,7 +1,8 @@
 <div class="game-layout"
      (mousemove)="onMouseMove($event)"
      (mouseup)="onMouseUp()"
-     (mouseleave)="onMouseUp()">
+     (mouseleave)="onMouseUp()"
+     (click)="closeJingleMenu()">
 
   <!-- ═══════════════════════════════════════ -->
   <!-- BUZZERS DÉPLAÇABLES AUTOUR DE LA TABLE  -->
@@ -20,7 +21,38 @@
       <div class="buzzer-header">
         <span class="buzzer-icon">🎮</span>
         <span class="buzzer-name">{{ buzzer.name }}</span>
+        <button class="jingle-menu-btn"
+                (mousedown)="$event.stopPropagation()"
+                (click)="toggleJingleMenu(buzzer.id, $event)"
+                [class.jingle-sending]="jingleSending() === buzzer.id">
+          @if (jingleSending() === buzzer.id) {
+            🎵
+          } @else {
+            ▼
+          }
+        </button>
       </div>
+
+      <!-- Menu contextuel jingles -->
+      @if (openJingleMenu() === buzzer.id && jingles().length > 0) {
+        <div class="jingle-dropdown" (mousedown)="$event.stopPropagation()">
+          <div class="jingle-dropdown-title">🎵 Jingles</div>
+          @for (jingle of jingles(); track jingle.id) {
+            <button class="jingle-dropdown-item"
+                    (click)="playJingle(buzzer.id, jingle.id)">
+              🎵 {{ jingle.name }}
+              @if (jingle.description) {
+                <small aria-label="Description: {{ jingle.description }}">{{ jingle.description }}</small>
+              }
+            </button>
+          }
+        </div>
+      }
+      @if (openJingleMenu() === buzzer.id && jingles().length === 0) {
+        <div class="jingle-dropdown" (mousedown)="$event.stopPropagation()">
+          <div class="jingle-dropdown-empty">Aucun jingle configuré</div>
+        </div>
+      }
       <div class="buzzer-player">{{ getPlayerName(buzzer.id) || '—' }}</div>
       <div class="buzzer-points">{{ getBuzzerScore(buzzer.id) }} pts</div>
 
