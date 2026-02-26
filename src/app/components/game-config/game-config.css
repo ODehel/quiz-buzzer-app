@@ -1,5 +1,18 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #12121f;
+}
+
 .container {
   max-width: 1200px;
+}
+
+.card {
+  background: #1e1e32;
+  border: 1px solid #3a3a5c;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .question-item {
@@ -8,13 +21,10 @@
 }
 
 .question-item:hover {
-  background-color: #f8f9fa;
+  background-color: rgba(30, 136, 229, 0.1);
 }
 
 .question-item.selected {
-  background-color: #e7f3ff;
-}
-
-.card {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: rgba(30, 136, 229, 0.2);
+  border-left: 3px solid #1e88e5;
 }
