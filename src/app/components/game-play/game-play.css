@@ -795,3 +795,40 @@
   color: #f9a825;
   font-weight: 600;
 }
+/* ═══════════════════════════════════════ */
+/* RÉPONSE ATTENDUE — visible par le maître du jeu */
+/* ═══════════════════════════════════════ */
+
+.expected-answer-banner {
+  background: rgba(255, 193, 7, 0.15);
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin: 12px 0;
+  text-align: center;
+}
+
+.expected-answer-icon {
+  margin-right: 6px;
+}
+
+.expected-answer-label {
+  color: #f0f0f0;
+  margin-right: 8px;
+}
+
+.expected-answer-value {
+  color: #ffc107;
+  font-size: 1.2em;
+}
+
+/* Dans la modale buzz */
+.expected-answer-hint {
+  background: rgba(255, 193, 7, 0.2);
+  border: 1px dashed #ffc107;
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin: 10px 0;
+  font-size: 1.1em;
+  color: #fff;
+}

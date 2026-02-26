@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, timeout, retry } from 'rxjs/operators';
+import { catchError, map, timeout, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Question } from '../models/question.model';
 import { Game } from '../models/game.model';
@@ -31,7 +31,19 @@ export class ApiService {
    * Récupérer toutes les questions
    */
   getQuestions(): Observable<Question[]> {
-    return this.http.get<Question[]>(`${this.apiUrl}/questions`).pipe(
+    return this.http.get<any[]>(`${this.apiUrl}/questions`).pipe(
+      map(questions => questions.map(q => ({
+        id: q.id,
+        text: q.text,
+        type: q.type?.toLowerCase() as 'mcq' | 'buzzer',
+        options: q.answers,
+        correctAnswer: q.correct_answer,
+        expectedAnswer: q.expected_answer,
+        timeLimit: q.time_limit,
+        points: q.points,
+        category: q.category,
+        difficulty: q.difficulty,
+      }))),
       catchError(this.handleError)
     );
   }
@@ -40,7 +52,36 @@ export class ApiService {
    * Créer une nouvelle question
    */
   createQuestion(question: Partial<Question>): Observable<any> {
-    return this.http.post(`${this.apiUrl}/questions`, question).pipe(
+    const payload = {
+      text: question.text,
+      type: question.type?.toUpperCase(),
+      answers: question.options,
+      correct_answer: question.correctAnswer,
+      expected_answer: question.expectedAnswer,
+      category: question.category,
+      difficulty: question.difficulty,
+      points: question.points,
+    };
+    return this.http.post(`${this.apiUrl}/questions`, payload).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Mettre à jour une question existante
+   */
+  updateQuestion(id: number, question: Partial<Question>): Observable<any> {
+    const payload = {
+      text: question.text,
+      type: question.type?.toUpperCase(),
+      answers: question.options,
+      correct_answer: question.correctAnswer,
+      expected_answer: question.expectedAnswer,
+      category: question.category,
+      difficulty: question.difficulty,
+      points: question.points,
+    };
+    return this.http.put(`${this.apiUrl}/questions/${id}`, payload).pipe(
       catchError(this.handleError)
     );
   }
@@ -118,7 +159,19 @@ export class ApiService {
    * Obtenir la question actuelle d'une partie
    */
   getCurrentQuestion(gameId: string): Observable<Question> {
-    return this.http.get<Question>(`${this.apiUrl}/games/${gameId}/current-question`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/games/${gameId}/current-question`).pipe(
+      map(q => ({
+        id: q.id,
+        text: q.text,
+        type: q.type?.toLowerCase() as 'mcq' | 'buzzer',
+        options: q.answers,
+        correctAnswer: q.correct_answer,
+        expectedAnswer: q.expected_answer,
+        timeLimit: q.time_limit,
+        points: q.points,
+        category: q.category,
+        difficulty: q.difficulty,
+      })),
       catchError(this.handleError)
     );
   }

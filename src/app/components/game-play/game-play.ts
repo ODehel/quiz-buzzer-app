@@ -50,7 +50,7 @@ export class GamePlayComponent implements OnInit, OnDestroy {
   showBuzzModal = signal(false);
   buzzWinner = signal<{ buzzerID: string; playerName: string; responseTime: number } | null>(null);
   excludedPlayers = signal<string[]>([]);
-  isBuzzerQuestion = computed(() => this.currentQuestion()?.type === 'BUZZER');
+  isBuzzerQuestion = computed(() => this.currentQuestion()?.type === 'buzzer');
 
   answerDetails = signal<AnswerDetail[]>([]);
   answerCounts = signal<number[]>([0, 0, 0, 0]);
@@ -259,7 +259,7 @@ export class GamePlayComponent implements OnInit, OnDestroy {
       next: (question) => {
         this.currentQuestion.set(question);
 
-        const duration = question.type === 'MCQ'
+        const duration = question.type === 'mcq'
           ? (this.gameService.currentGame()?.settings?.mcqDuration || 30000) / 1000
           : (this.gameService.currentGame()?.settings?.buzzerDuration || 10000) / 1000;
         this.maxTime.set(duration);
