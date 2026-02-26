@@ -1,0 +1,253 @@
+.jingles-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header h2 {
+  margin: 0;
+  color: #e0e0e0;
+}
+
+.btn-back {
+  background: none;
+  border: 1px solid #555;
+  color: #aaa;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #888;
+  color: #e0e0e0;
+}
+
+.btn-create {
+  background: #1e88e5;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-create:hover {
+  background: #1565c0;
+}
+
+/* Overlay formulaire */
+.form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.form-card {
+  background: #1e1e32;
+  border: 1px solid #3a3a5c;
+  border-radius: 12px;
+  padding: 30px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  color: #e0e0e0;
+}
+
+.form-card h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #e0e0e0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #ccc;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #3a3a5c;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  background: #1a1a2e;
+  color: #e0e0e0;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #1e88e5;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-cancel {
+  background: #3a3a5c;
+  color: #ccc;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-save {
+  background: #1e88e5;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-save:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Liste des jingles */
+.jingles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.jingle-card {
+  background: #1e1e32;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border: 1px solid #3a3a5c;
+}
+
+.jingle-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.jingle-icon {
+  font-size: 1.2rem;
+}
+
+.jingle-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e0e0e0;
+  flex: 1;
+}
+
+.jingle-duration {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 215, 64, 0.15);
+  color: #ffd740;
+  border: 1px solid rgba(255, 215, 64, 0.3);
+}
+
+.jingle-filepath {
+  font-size: 13px;
+  color: #90caf9;
+  margin: 4px 0 8px;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.jingle-description {
+  font-size: 14px;
+  color: #aaa;
+  margin: 4px 0 8px;
+  line-height: 1.5;
+}
+
+.jingle-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+}
+
+.jingle-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit, .btn-delete {
+  background: none;
+  border: 1px solid #555;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #ccc;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  background: rgba(30, 136, 229, 0.15);
+  border-color: #1e88e5;
+}
+
+.btn-delete:hover {
+  background: rgba(229, 57, 53, 0.15);
+  border-color: #e53935;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-size: 16px;
+}

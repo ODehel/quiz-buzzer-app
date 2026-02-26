@@ -5,6 +5,7 @@ import { catchError, map, timeout, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Question } from '../models/question.model';
 import { Game } from '../models/game.model';
+import { Jingle } from '../models/jingle.model';
 
 @Injectable({
   providedIn: 'root'
@@ -202,6 +203,61 @@ export class ApiService {
       buzzerID,
       playerName
     }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Récupérer tous les jingles
+   */
+  getJingles(): Observable<Jingle[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/jingles`).pipe(
+      map(jingles => jingles.map(j => ({
+        id: j.id,
+        name: j.name,
+        filePath: j.file_path,
+        duration: j.duration,
+        description: j.description,
+      }))),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Créer un jingle
+   */
+  createJingle(jingle: Partial<Jingle>): Observable<any> {
+    const payload = {
+      name: jingle.name,
+      file_path: jingle.filePath,
+      duration: jingle.duration,
+      description: jingle.description,
+    };
+    return this.http.post(`${this.apiUrl}/jingles`, payload).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Mettre à jour un jingle
+   */
+  updateJingle(id: number, jingle: Partial<Jingle>): Observable<any> {
+    const payload = {
+      name: jingle.name,
+      file_path: jingle.filePath,
+      duration: jingle.duration,
+      description: jingle.description,
+    };
+    return this.http.put(`${this.apiUrl}/jingles/${id}`, payload).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Supprimer un jingle
+   */
+  deleteJingle(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/jingles/${id}`).pipe(
       catchError(this.handleError)
     );
   }
