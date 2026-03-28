@@ -91,8 +91,8 @@ export const routes: Routes = [
       {
         path: 'lobby',
         loadComponent: () =>
-          import('./pilot/pilot-shell.component').then(
-            (m) => m.PilotShellComponent
+          import('./pilot/lobby/lobby.component').then(
+            (m) => m.LobbyComponent
           ),
       },
       {
