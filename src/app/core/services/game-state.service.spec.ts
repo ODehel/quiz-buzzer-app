@@ -216,6 +216,33 @@ describe('GameStateService', () => {
     });
   });
 
+  describe('initFromGame()', () => {
+    it('CA-25 — sets state from a Game object with PENDING status', () => {
+      service.initFromGame({
+        id: 'game-new',
+        quiz_id: 'quiz-1',
+        quiz_name: 'Test Quiz',
+        status: 'PENDING',
+        participants: [
+          { order: 1, name: 'Alice' },
+          { order: 2, name: 'Bob' },
+        ],
+        created_at: '2026-03-28T10:00:00Z',
+        started_at: null,
+        completed_at: null,
+      });
+
+      expect(service.state().gameId).toBe('game-new');
+      expect(service.state().status).toBe('PENDING');
+      expect(service.state().quizId).toBe('quiz-1');
+      expect(service.state().participants).toEqual([
+        { order: 1, name: 'Alice', cumulative_score: 0 },
+        { order: 2, name: 'Bob', cumulative_score: 0 },
+      ]);
+      expect(service.isPiloting()).toBe(true);
+    });
+  });
+
   describe('via messages$ subscription', () => {
     it('CA-8/CA-20 — dispatches game_state_sync received via messages$', () => {
       messagesSubject.next({
