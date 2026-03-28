@@ -74,6 +74,13 @@ export const routes: Routes = [
             (m) => m.GameListComponent
           ),
       },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./games/game-create.component').then(
+            (m) => m.GameCreateComponent
+          ),
+      },
     ],
   },
   {

@@ -88,6 +88,20 @@ export class GameStateService {
     }
   }
 
+  initFromGame(game: Game): void {
+    this._state.update(() => ({
+      ...INITIAL_STATE,
+      gameId: game.id,
+      status: 'PENDING',
+      quizId: game.quiz_id,
+      participants: game.participants.map((p) => ({
+        order: p.order,
+        name: p.name,
+        cumulative_score: 0,
+      })),
+    }));
+  }
+
   dispatch(msg: InboundMessage): void {
     if (msg.type === 'game_state_sync') {
       this.handleGameStateSync(msg as GameStateSyncMessage);
