@@ -24,7 +24,7 @@ describe('PlayComponent', () => {
       isReconnecting: jest.fn().mockReturnValue(false),
     };
 
-    routerMock = { navigate: jest.fn() };
+    routerMock = { navigate: jest.fn(), getCurrentNavigation: jest.fn().mockReturnValue(null) };
 
     const defaultState = {
       gameId: 'game-1',

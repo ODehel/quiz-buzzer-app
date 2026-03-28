@@ -21,7 +21,7 @@ describe('noActiveGameGuard', () => {
     });
   });
 
-  it('CA-19 — returns true when no game is active (isPiloting false)', () => {
+  it('CA-28 — returns true when no game is active (isPiloting false)', () => {
     gameStateMock.isPiloting.mockReturnValue(false);
 
     const result = TestBed.runInInjectionContext(() =>
@@ -34,7 +34,7 @@ describe('noActiveGameGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('CA-18 — redirects to /pilot/play when a game is active', () => {
+  it('CA-28 — redirects to /pilot/play when a game is active', () => {
     gameStateMock.isPiloting.mockReturnValue(true);
 
     const result = TestBed.runInInjectionContext(() =>
@@ -45,6 +45,8 @@ describe('noActiveGameGuard', () => {
     );
 
     expect(result).toBe(false);
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/pilot/play']);
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/pilot/play'], {
+      state: { toast: 'Vous ne pouvez pas accéder au contenu pendant une partie' },
+    });
   });
 });

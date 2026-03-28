@@ -7,7 +7,13 @@ import type { InboundMessage, OutboundMessage } from '../models/websocket.models
 import { environment } from '../../../environments/environment';
 
 const MAX_BACKOFF_MS = 30_000;
-const NON_RETRYABLE_CLOSE_CODE = 4004;
+const REFRESH_RETRY_DELAY_MS = 5_000;
+const MAX_REFRESH_RETRIES = 3;
+
+const TERMINAL_CLOSE_CODES: Record<number, string> = {
+  4004: 'Cette session a été reprise dans un autre onglet.',
+  4001: "Erreur d'authentification WebSocket.",
+};
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
@@ -16,6 +22,7 @@ export class WebSocketService {
   private readonly zone = inject(NgZone);
   private socket: WebSocket | null = null;
   private readonly _messages$ = new Subject<InboundMessage>();
+  private attempt = 0;
 
   readonly messages$: Observable<InboundMessage> = this._messages$.pipe(
     shareReplay({ bufferSize: 1, refCount: true })
@@ -26,7 +33,7 @@ export class WebSocketService {
 
   connect(): void {
     this.zone.runOutsideAngular(() => {
-      this.establishConnection(0);
+      this.establishConnection();
     });
   }
 
@@ -36,11 +43,10 @@ export class WebSocketService {
     }
   }
 
-  private establishConnection(attempt: number): void {
+  private establishConnection(): void {
     this.socket = new WebSocket(environment.wsUrl);
 
     this.socket.onopen = () => {
-      attempt = 0;
       const token = this.auth.getToken();
       if (token) {
         this.socket!.send(JSON.stringify({ type: 'auth', token }));
@@ -56,7 +62,7 @@ export class WebSocketService {
 
     this.socket.onclose = (event: CloseEvent) => {
       this.zone.run(() => {
-        this.handleClose(event, attempt);
+        this.handleClose(event.code);
       });
     };
 
@@ -77,10 +83,12 @@ export class WebSocketService {
     if (msg.type === 'auth_success') {
       this.isConnected.set(true);
       this.isReconnecting.set(false);
+      this.attempt = 0; // CA-2: reset backoff on successful auth
     }
     this._messages$.next(msg);
   }
 
+  // CA-9/CA-10: Proactive refresh on token_expiring_soon
   private handleTokenExpiringSoon(): void {
     this.refreshWithRetry(0);
   }
@@ -95,14 +103,20 @@ export class WebSocketService {
         }
       })
       .catch(() => {
-        if (retryCount < 2) {
-          setTimeout(() => this.refreshWithRetry(retryCount + 1), 5000);
+        if (retryCount < MAX_REFRESH_RETRIES - 1) {
+          // CA-12: retry up to 3 times with 5s delay
+          setTimeout(
+            () => this.refreshWithRetry(retryCount + 1),
+            REFRESH_RETRY_DELAY_MS
+          );
         } else {
+          // CA-12: after 3 failures, close socket — backoff reconnection takes over
           this.socket?.close();
         }
       });
   }
 
+  // CA-13: token_expired = same as close code 4002 — refresh then full reconnect
   private handleTokenExpired(): void {
     this.auth
       .refresh()
@@ -114,33 +128,59 @@ export class WebSocketService {
       });
   }
 
-  private handleClose(event: CloseEvent, attempt: number): void {
+  private handleClose(code: number): void {
     this.socket = null;
     this.isConnected.set(false);
 
-    if (event.code === NON_RETRYABLE_CLOSE_CODE) {
+    // CA-5/CA-6: Terminal close codes — no retry
+    const terminalMessage = TERMINAL_CLOSE_CODES[code];
+    if (terminalMessage) {
+      this.isReconnecting.set(false);
       this.router.navigate(['/error'], {
-        queryParams: { message: 'Session remplacée par un autre onglet.' },
+        state: { message: terminalMessage },
       });
       return;
     }
 
-    if (event.code === 4002) {
-      this.isReconnecting.set(true);
-      this.auth
-        .refresh()
-        .then(() => {
-          this.establishConnection(0);
-        })
-        .catch(() => {
-          const delay = Math.min(1000 * Math.pow(2, attempt), MAX_BACKOFF_MS);
-          setTimeout(() => this.establishConnection(attempt + 1), delay);
-        });
+    this.isReconnecting.set(true);
+
+    // CA-7: Token expired server-side — refresh before reconnecting
+    if (code === 4002) {
+      this.refreshThenReconnect(0);
       return;
     }
 
-    this.isReconnecting.set(true);
-    const delay = Math.min(1000 * Math.pow(2, attempt), MAX_BACKOFF_MS);
-    setTimeout(() => this.establishConnection(attempt + 1), delay);
+    // CA-1: All other codes — exponential backoff
+    this.scheduleReconnect();
+  }
+
+  // CA-7/CA-8: Refresh with retry before reconnection
+  private refreshThenReconnect(retryCount: number): void {
+    this.auth
+      .refresh()
+      .then(() => {
+        this.attempt = 0;
+        this.establishConnection();
+      })
+      .catch(() => {
+        if (retryCount < MAX_REFRESH_RETRIES - 1) {
+          setTimeout(
+            () => this.refreshThenReconnect(retryCount + 1),
+            REFRESH_RETRY_DELAY_MS
+          );
+        } else {
+          // CA-8: After 3 refresh failures, navigate to error
+          this.isReconnecting.set(false);
+          this.router.navigate(['/error'], {
+            state: { message: "Impossible de renouveler l'authentification." },
+          });
+        }
+      });
+  }
+
+  private scheduleReconnect(): void {
+    const delay = Math.min(1000 * Math.pow(2, this.attempt), MAX_BACKOFF_MS);
+    this.attempt++;
+    setTimeout(() => this.establishConnection(), delay);
   }
 }

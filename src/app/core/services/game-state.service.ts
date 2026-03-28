@@ -1,8 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { WebSocketService } from './websocket.service';
+import { computeRemaining } from '../utils/timer.utils';
 import type { Game } from '../models/game.models';
 import type {
   GameStatus,
@@ -87,11 +89,24 @@ const INITIAL_STATE: GameState = {
   invalidatedPlayers: [],
 };
 
+const ACTIVE_STATUSES: GameStatus[] = [
+  'PENDING',
+  'OPEN',
+  'QUESTION_TITLE',
+  'QUESTION_OPEN',
+  'QUESTION_BUZZED',
+  'QUESTION_CLOSED',
+];
+
+const SYNC_TIMEOUT_MS = 2_000;
+
 @Injectable({ providedIn: 'root' })
 export class GameStateService {
   private readonly http = inject(HttpClient);
   private readonly ws = inject(WebSocketService);
+  private readonly router = inject(Router);
   private readonly _state = signal<GameState>(INITIAL_STATE);
+  private syncTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   readonly state = this._state.asReadonly();
   readonly status = computed(() => this._state().status);
@@ -161,9 +176,33 @@ export class GameStateService {
     return this._state().questionResults;
   }
 
+  /** CA-20: Start a timeout after auth_success; if no game_state_sync arrives, call syncInitial */
+  startSyncTimeout(): void {
+    this.clearSyncTimeout();
+    this.syncTimeoutId = setTimeout(() => {
+      this.syncInitial().then(() => {
+        // If still no active game after REST sync, redirect pilot pages to dashboard
+        if (!this.isPiloting() && this.router.url.startsWith('/pilot')) {
+          this.router.navigate(['/dashboard']);
+        }
+      });
+    }, SYNC_TIMEOUT_MS);
+  }
+
+  clearSyncTimeout(): void {
+    if (this.syncTimeoutId !== null) {
+      clearTimeout(this.syncTimeoutId);
+      this.syncTimeoutId = null;
+    }
+  }
+
   dispatch(msg: InboundMessage): void {
     switch (msg.type) {
+      case 'auth_success':
+        this.startSyncTimeout();
+        break;
       case 'game_state_sync':
+        this.clearSyncTimeout();
         this.handleGameStateSync(msg as GameStateSyncMessage);
         break;
       case 'question_title':
@@ -203,21 +242,31 @@ export class GameStateService {
   }
 
   private handleGameStateSync(msg: GameStateSyncMessage): void {
-    this._state.set({
+    const { status, game_id, quiz_id, question_index, question_type,
+            question_title, choices, participants, connected_buzzers,
+            started_at, time_limit } = msg;
+
+    // CA-14 to CA-19: Update state based on sync status
+    this._state.update((s) => ({
       ...INITIAL_STATE,
-      gameId: msg.game_id,
-      status: msg.status,
-      quizId: msg.quiz_id,
-      questionIndex: msg.question_index,
-      questionType: msg.question_type,
-      questionTitle: msg.question_title,
-      choices: msg.choices,
-      participants: msg.participants,
-      connectedBuzzers: msg.connected_buzzers,
-      startedAt: msg.started_at,
-      timeLimit: msg.time_limit,
-      questionResults: this._state().questionResults,
-    });
+      gameId: game_id,
+      status,
+      quizId: quiz_id,
+      questionIndex: question_index,
+      questionType: question_type,
+      questionTitle: question_title,
+      choices,
+      participants,
+      connectedBuzzers: connected_buzzers,
+      startedAt: started_at ?? null,
+      timeLimit: time_limit ?? null,
+      // CA-17: Recalculate remaining time if started_at and time_limit present
+      remainingSeconds:
+        started_at && time_limit
+          ? computeRemaining(started_at, time_limit)
+          : null,
+      questionResults: s.questionResults, // preserve across reconnection
+    }));
   }
 
   private handleQuestionTitle(msg: QuestionTitleMessage): void {
