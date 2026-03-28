@@ -419,7 +419,7 @@ export class QuestionFormComponent {
       .getAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (themes) => this.themes.set(themes),
+        next: (res) => this.themes.set(res.data),
       });
   }
 
@@ -431,7 +431,7 @@ export class QuestionFormComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ question, themes }) => {
-          this.themes.set(themes);
+          this.themes.set(themes.data);
           this.populateForm(question);
           this.originalQuestion = question;
         },

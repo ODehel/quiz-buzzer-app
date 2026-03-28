@@ -20,6 +20,7 @@ export interface Question {
 export interface Theme {
   id: string;
   name: string;
+  created_at: string;
 }
 
 export interface QuestionFilters {

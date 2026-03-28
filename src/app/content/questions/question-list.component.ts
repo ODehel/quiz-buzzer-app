@@ -307,7 +307,7 @@ export class QuestionListComponent {
           this.total.set(questions.total);
           this.totalPages.set(questions.total_pages);
           this.currentPage.set(questions.page);
-          this.themes.set(themes);
+          this.themes.set(themes.data);
           this.isLoading.set(false);
         },
         error: () => {

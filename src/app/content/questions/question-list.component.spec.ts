@@ -11,8 +11,8 @@ import type { Question, Theme } from '../../core/models/question.models';
 import type { PagedResponse } from '../../core/models/api.models';
 
 const MOCK_THEMES: Theme[] = [
-  { id: 't1', name: 'Culture' },
-  { id: 't2', name: 'Sport' },
+  { id: 't1', name: 'Culture', created_at: '2026-01-01T00:00:00Z' },
+  { id: 't2', name: 'Sport', created_at: '2026-01-02T00:00:00Z' },
 ];
 
 function createMockQuestion(overrides: Partial<Question> = {}): Question {
@@ -69,7 +69,7 @@ describe('QuestionListComponent', () => {
       delete: jest.fn().mockResolvedValue(undefined),
     };
     mockThemeService = {
-      getAll: jest.fn().mockReturnValue(of(MOCK_THEMES)),
+      getAll: jest.fn().mockReturnValue(of({ data: MOCK_THEMES, page: 1, limit: 100, total: MOCK_THEMES.length, total_pages: 1 })),
     };
 
     TestBed.configureTestingModule({
