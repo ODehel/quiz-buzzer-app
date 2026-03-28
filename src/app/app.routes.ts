@@ -81,6 +81,13 @@ export const routes: Routes = [
             (m) => m.GameCreateComponent
           ),
       },
+      {
+        path: ':id/results',
+        loadComponent: () =>
+          import('./pilot/results/game-results.component').then(
+            (m) => m.GameResultsComponent
+          ),
+      },
     ],
   },
   {
@@ -98,8 +105,15 @@ export const routes: Routes = [
       {
         path: 'play',
         loadComponent: () =>
-          import('./pilot/pilot-shell.component').then(
-            (m) => m.PilotShellComponent
+          import('./pilot/play/play.component').then(
+            (m) => m.PlayComponent
+          ),
+      },
+      {
+        path: 'results',
+        loadComponent: () =>
+          import('./pilot/results/game-results.component').then(
+            (m) => m.GameResultsComponent
           ),
       },
     ],

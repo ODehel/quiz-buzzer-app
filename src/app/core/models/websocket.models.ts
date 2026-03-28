@@ -42,6 +42,18 @@ export type InboundMessage =
   | TokenExpiringSoonMessage
   | TokenExpiredMessage
   | GameStateSyncMessage
+  | QuestionTitleMessage
+  | QuestionChoicesMessage
+  | QuestionOpenMessage
+  | TimerTickMessage
+  | TimerEndMessage
+  | PlayerAnsweredMessage
+  | AllAnsweredMessage
+  | BuzzLockedMessage
+  | BuzzUnlockedMessage
+  | QuestionResultSummaryMessage
+  | IntermediateRankingMessage
+  | ErrorMessage
   | GenericInboundMessage;
 
 export interface AuthSuccessMessage {
@@ -70,6 +82,100 @@ export interface GameStateSyncMessage {
   connected_buzzers: string[];
   started_at: string | null;
   time_limit: number | null;
+}
+
+export interface QuestionTitleMessage {
+  type: 'question_title';
+  question_index: number;
+  question_type: 'MCQ';
+  title: string;
+  time_limit: number;
+  total_questions: number;
+}
+
+export interface QuestionChoicesMessage {
+  type: 'question_choices';
+  choices: [string, string, string, string];
+  started_at: string;
+}
+
+export interface QuestionOpenMessage {
+  type: 'question_open';
+  question_index: number;
+  question_type: 'SPEED';
+  title: string;
+  time_limit: number;
+  total_questions: number;
+  started_at: string;
+}
+
+export interface TimerTickMessage {
+  type: 'timer_tick';
+  remaining_seconds: number;
+}
+
+export interface TimerEndMessage {
+  type: 'timer_end';
+}
+
+export interface PlayerAnsweredMessage {
+  type: 'player_answered';
+  participant_name: string;
+  participant_order: number;
+  choice: string;
+  response_time_ms: number;
+}
+
+export interface AllAnsweredMessage {
+  type: 'all_answered';
+}
+
+export interface BuzzLockedMessage {
+  type: 'buzz_locked';
+  participant_name: string;
+  participant_order: number;
+}
+
+export interface BuzzUnlockedMessage {
+  type: 'buzz_unlocked';
+  remaining_seconds: number;
+  invalidated_participant: string;
+}
+
+export interface McqPlayerResult {
+  participant_name: string;
+  participant_order: number;
+  choice: string | null;
+  correct: boolean;
+  response_time_ms: number | null;
+  points_earned: number;
+}
+
+export interface SpeedPlayerResult {
+  participant_name: string;
+  participant_order: number;
+  winner: boolean;
+  points_earned: number;
+}
+
+export interface QuestionResultSummaryMessage {
+  type: 'question_result_summary';
+  question_index: number;
+  question_type: QuestionType;
+  correct_answer: string;
+  results: McqPlayerResult[] | SpeedPlayerResult[];
+  ranking: RankingEntry[];
+}
+
+export interface IntermediateRankingMessage {
+  type: 'intermediate_ranking';
+  ranking: RankingEntry[];
+}
+
+export interface ErrorMessage {
+  type: 'error';
+  code: string;
+  message?: string;
 }
 
 export interface GenericInboundMessage {
