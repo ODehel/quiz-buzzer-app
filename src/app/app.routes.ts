@@ -22,8 +22,8 @@ export const routes: Routes = [
       {
         path: 'themes',
         loadComponent: () =>
-          import('./content/content-shell.component').then(
-            (m) => m.ContentShellComponent
+          import('./content/themes/theme-list.component').then(
+            (m) => m.ThemeListComponent
           ),
       },
       {
