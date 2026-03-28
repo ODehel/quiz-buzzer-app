@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  serverUrl: 'http://192.168.1.10:3000',
-  wsUrl: 'ws://192.168.1.10:3000/ws',
+  serverUrl: '',
+  wsUrl: 'ws://localhost:4200/ws',
   adminUsername: 'admin',
-  adminPassword: 'MonSuperMotDePasse!',
+  adminPassword: '2de0eae545ab5f6e5dc9cdf3',
 };
