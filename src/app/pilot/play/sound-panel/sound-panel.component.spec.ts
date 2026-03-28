@@ -1,13 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { of, Subject, NEVER, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { SoundPanelComponent } from './sound-panel.component';
 import { SoundService } from '../../../content/sounds/sound.service';
-import { WebSocketService } from '../../../core/services/websocket.service';
 import { GameStateService } from '../../../core/services/game-state.service';
 import type { Sound } from '../../../core/models/sound.models';
 import type { PagedResponse } from '../../../core/models/api.models';
-import type { InboundMessage } from '../../../core/models/websocket.models';
 
 const MOCK_SOUND: Sound = {
   id: 's1',
@@ -34,20 +32,10 @@ const MOCK_PAGE: PagedResponse<Sound> = {
 };
 
 describe('SoundPanelComponent', () => {
-  let wsMock: { send: jest.Mock; messages$: Subject<InboundMessage>; isConnected: jest.Mock; isReconnecting: jest.Mock };
   let soundServiceMock: jest.Mocked<Partial<SoundService>>;
   let gsStub: Partial<GameStateService>;
-  let messagesSubject: Subject<InboundMessage>;
 
   function createComponent(soundResponse: PagedResponse<Sound> = MOCK_PAGE) {
-    messagesSubject = new Subject<InboundMessage>();
-    wsMock = {
-      send: jest.fn(),
-      messages$: messagesSubject,
-      isConnected: jest.fn().mockReturnValue(true),
-      isReconnecting: jest.fn().mockReturnValue(false),
-    };
-
     soundServiceMock = {
       getAll: jest.fn().mockReturnValue(of(soundResponse)),
     };
@@ -59,7 +47,6 @@ describe('SoundPanelComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         SoundPanelComponent,
-        { provide: WebSocketService, useValue: wsMock },
         { provide: SoundService, useValue: soundServiceMock },
         { provide: GameStateService, useValue: gsStub },
       ],
@@ -68,124 +55,120 @@ describe('SoundPanelComponent', () => {
     return TestBed.inject(SoundPanelComponent);
   }
 
-  // --- CA-15: Loads jingles from SoundService.getAll() at mount ---
+  // --- Loads jingles from SoundService.getAll() at mount ---
 
-  it('CA-15: loads jingles with limit=100 on init', () => {
+  it('loads jingles with limit=100 on init', () => {
     createComponent();
 
     expect(soundServiceMock.getAll).toHaveBeenCalledWith({ limit: 100 });
   });
 
-  it('CA-15: stores loaded sounds in signal', () => {
+  it('stores loaded sounds in signal', () => {
     const component = createComponent();
 
     expect(component['sounds']()).toHaveLength(2);
     expect(component['sounds']()[0].name).toBe('Fanfare');
   });
 
-  // --- CA-11: Two system sound buttons ---
+  // --- System sound buttons emit via Output ---
 
-  // --- CA-12: Waiting button sends trigger_system_sound WAITING ---
-
-  it('CA-12: sends trigger_system_sound WAITING via WebSocket', () => {
+  it('emits trigger_system_sound WAITING via triggerSystemSound output', () => {
     const component = createComponent();
+    const spy = jest.fn();
+    component.triggerSystemSound.subscribe(spy);
 
     component['onTriggerSystemSound']('WAITING');
 
-    expect(wsMock.send).toHaveBeenCalledWith({
+    expect(spy).toHaveBeenCalledWith({
       type: 'trigger_system_sound',
       sound_id: 'WAITING',
     });
   });
 
-  // --- CA-13: Suspense button sends trigger_system_sound SUSPENSE ---
-
-  it('CA-13: sends trigger_system_sound SUSPENSE via WebSocket', () => {
+  it('emits trigger_system_sound SUSPENSE via triggerSystemSound output', () => {
     const component = createComponent();
+    const spy = jest.fn();
+    component.triggerSystemSound.subscribe(spy);
 
     component['onTriggerSystemSound']('SUSPENSE');
 
-    expect(wsMock.send).toHaveBeenCalledWith({
+    expect(spy).toHaveBeenCalledWith({
       type: 'trigger_system_sound',
       sound_id: 'SUSPENSE',
     });
   });
 
-  // --- CA-14: UNKNOWN_SYSTEM_SOUND error shows toast ---
+  // --- Send jingle via Output ---
 
-  it('CA-14: shows toast on UNKNOWN_SYSTEM_SOUND error', () => {
+  it('emits play_sound with targets when a specific buzzer is selected', () => {
     const component = createComponent();
-
-    messagesSubject.next({ type: 'error', code: 'UNKNOWN_SYSTEM_SOUND' } as any);
-
-    expect(component['toastMessage']()).toBe('Son système inconnu');
-  });
-
-  // --- CA-17: Send jingle with targets (specific buzzer) ---
-
-  it('CA-17: sends play_sound with targets when a specific buzzer is selected', () => {
-    const component = createComponent();
+    const spy = jest.fn();
+    component.playSound.subscribe(spy);
     component['selectedId'].set('s1');
     component['selectedTarget'].set('buzzer-1');
 
     component['onSendJingle']();
 
-    expect(wsMock.send).toHaveBeenCalledWith({
+    expect(spy).toHaveBeenCalledWith({
       type: 'play_sound',
       sound_id: 's1',
       targets: ['buzzer-1'],
     });
   });
 
-  // --- CA-17: Send jingle broadcast (ALL) ---
-
-  it('CA-17: sends play_sound without targets when ALL is selected (broadcast)', () => {
+  it('emits play_sound without targets when ALL is selected (broadcast)', () => {
     const component = createComponent();
+    const spy = jest.fn();
+    component.playSound.subscribe(spy);
     component['selectedId'].set('s1');
     component['selectedTarget'].set('ALL');
 
     component['onSendJingle']();
 
-    expect(wsMock.send).toHaveBeenCalledWith({
+    expect(spy).toHaveBeenCalledWith({
       type: 'play_sound',
       sound_id: 's1',
     });
   });
 
-  // --- CA-18: Send button disabled when no jingle selected ---
+  // --- Send button disabled when no jingle selected ---
 
-  it('CA-18: canSend is false when no jingle is selected', () => {
+  it('canSend is false when no jingle is selected', () => {
     const component = createComponent();
 
     expect(component['canSend']()).toBe(false);
   });
 
-  it('CA-18: canSend is true when a jingle is selected', () => {
+  it('canSend is true when a jingle is selected', () => {
     const component = createComponent();
     component['selectedId'].set('s1');
 
     expect(component['canSend']()).toBe(true);
   });
 
-  // --- CA-19: SOUND_NOT_FOUND error shows toast ---
+  // --- CA-35/CA-36: Ranking button ---
 
-  it('CA-19: shows toast on SOUND_NOT_FOUND error', () => {
+  it('CA-35/CA-36 — triggerRanking output exists', () => {
     const component = createComponent();
+    const spy = jest.fn();
+    component.triggerRanking.subscribe(spy);
 
-    messagesSubject.next({ type: 'error', code: 'SOUND_NOT_FOUND' } as any);
+    component.triggerRanking.emit();
 
-    expect(component['toastMessage']()).toBe('Jingle introuvable sur le serveur');
+    expect(spy).toHaveBeenCalled();
   });
 
   // --- onSendJingle does nothing when no id selected ---
 
-  it('does not send when selectedId is null', () => {
+  it('does not emit when selectedId is null', () => {
     const component = createComponent();
+    const spy = jest.fn();
+    component.playSound.subscribe(spy);
     component['selectedId'].set(null);
 
     component['onSendJingle']();
 
-    expect(wsMock.send).not.toHaveBeenCalled();
+    expect(spy).not.toHaveBeenCalled();
   });
 
   // --- Error loading sounds ---
@@ -193,14 +176,6 @@ describe('SoundPanelComponent', () => {
   it('shows toast when loading sounds fails', () => {
     soundServiceMock = {
       getAll: jest.fn().mockReturnValue(throwError(() => new Error('Network error'))),
-    };
-
-    messagesSubject = new Subject<InboundMessage>();
-    wsMock = {
-      send: jest.fn(),
-      messages$: messagesSubject,
-      isConnected: jest.fn().mockReturnValue(true),
-      isReconnecting: jest.fn().mockReturnValue(false),
     };
 
     gsStub = {
@@ -211,7 +186,6 @@ describe('SoundPanelComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         SoundPanelComponent,
-        { provide: WebSocketService, useValue: wsMock },
         { provide: SoundService, useValue: soundServiceMock },
         { provide: GameStateService, useValue: gsStub },
       ],
@@ -219,5 +193,20 @@ describe('SoundPanelComponent', () => {
 
     const component = TestBed.inject(SoundPanelComponent);
     expect(component['toastMessage']()).toBe('Erreur lors du chargement des jingles');
+  });
+
+  // --- showToast ---
+
+  it('showToast sets and clears message', () => {
+    jest.useFakeTimers();
+    const component = createComponent();
+
+    component.showToast('Test message');
+    expect(component['toastMessage']()).toBe('Test message');
+
+    jest.advanceTimersByTime(4000);
+    expect(component['toastMessage']()).toBeNull();
+
+    jest.useRealTimers();
   });
 });
