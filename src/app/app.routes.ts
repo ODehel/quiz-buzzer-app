@@ -34,6 +34,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'quizzes',
+        loadComponent: () =>
+          import('./content/quizzes/quiz-list.component').then(
+            (m) => m.QuizListComponent
+          ),
+      },
+      {
         path: 'questions/new',
         loadComponent: () =>
           import('./content/questions/question-form.component').then(
