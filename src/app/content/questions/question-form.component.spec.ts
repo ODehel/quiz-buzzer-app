@@ -308,7 +308,6 @@ describe('QuestionFormComponent', () => {
 
     // CA-15: 404 navigates back to list
     it('CA-15: navigates to /content/questions on 404', () => {
-      const mockRouter = { navigate: jest.fn().mockResolvedValue(true) };
       mockQuestionService = {
         getById: jest.fn().mockReturnValue(
           throwError(() => new HttpErrorResponse({ status: 404 }))
@@ -324,11 +323,10 @@ describe('QuestionFormComponent', () => {
 
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        imports: [QuestionFormComponent],
+        imports: [QuestionFormComponent, RouterTestingModule],
         providers: [
           { provide: QuestionService, useValue: mockQuestionService },
           { provide: ThemeService, useValue: mockThemeService },
-          { provide: Router, useValue: mockRouter },
           {
             provide: ActivatedRoute,
             useValue: {
@@ -338,10 +336,13 @@ describe('QuestionFormComponent', () => {
         ],
       });
 
+      const testRouter = TestBed.inject(Router);
+      jest.spyOn(testRouter, 'navigate').mockResolvedValue(true);
+
       fixture = TestBed.createComponent(QuestionFormComponent);
       fixture.detectChanges();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/content/questions']);
+      expect(testRouter.navigate).toHaveBeenCalledWith(['/content/questions']);
     });
 
     // CA-17: type toggle disabled in edit mode

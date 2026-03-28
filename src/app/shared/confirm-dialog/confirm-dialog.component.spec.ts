@@ -26,7 +26,7 @@ describe('ConfirmDialogComponent', () => {
     fixture.detectChanges();
 
     expect(el.querySelector('[data-testid="confirm-dialog"]')).toBeTruthy();
-    expect(el.querySelector('.dialog__message')!.textContent).toContain('Voulez-vous supprimer ?');
+    expect(el.querySelector('.modal-body')!.textContent).toContain('Voulez-vous supprimer ?');
   }));
 
   it('resolves with true when confirm is clicked', fakeAsync(() => {

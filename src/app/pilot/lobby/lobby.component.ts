@@ -25,155 +25,149 @@ const MAX_BUZZER_SLOTS = 10;
   imports: [ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="lobby">
-      <!-- En-tête -->
-      <header class="lobby__header" data-testid="lobby-header">
-        <h1>Lobby d'attente</h1>
-        <div class="lobby__meta">
-          <span data-testid="quiz-name">{{ quizName() ?? 'Chargement...' }}</span>
+    <!-- En-tete + actions -->
+    <div class="lobby-header" data-testid="lobby-header">
+      <div>
+        <h1 class="lobby-title">Lobby d'attente</h1>
+        <div class="lobby-quiz-name">
+          <span data-testid="quiz-name">Quiz : <span>{{ quizName() ?? 'Chargement...' }}</span></span>
+          &nbsp;&middot;&nbsp;
           <span data-testid="participant-count">{{ gs.state().participants.length }} participants</span>
         </div>
-      </header>
-
-      <!-- Barre de readiness -->
-      <div
-        class="readiness"
-        [class.readiness--ready]="isReady()"
-        [class.readiness--waiting]="!isReady()"
-        data-testid="readiness-bar"
-      >
-        <div class="readiness__bar">
-          <div
-            class="readiness__fill"
-            [style.width.%]="readinessPercent()"
-          ></div>
-        </div>
-        <span class="readiness__label" data-testid="readiness-label">
-          {{ gs.connectedBuzzers().length }} buzzers connectés sur {{ gs.state().participants.length }} attendus
-        </span>
       </div>
-
-      <div class="lobby__panels">
-        <!-- Panneau des participants -->
-        <section class="panel" data-testid="participants-panel">
-          <h2>Participants</h2>
-          <ul class="panel__list">
-            @for (entry of participantsWithBuzzer(); track entry.order) {
-              <li class="panel__item" data-testid="participant-item">
-                <span class="panel__order">{{ entry.order }}</span>
-                <span class="panel__name">{{ entry.name }}</span>
-                @if (entry.buzzerUsername) {
-                  <span class="panel__buzzer panel__buzzer--connected" data-testid="buzzer-status">
-                    {{ entry.buzzerUsername }}
-                  </span>
-                } @else {
-                  <span class="panel__buzzer panel__buzzer--disconnected" data-testid="buzzer-status">
-                    Non connecté
-                  </span>
-                }
-              </li>
-            }
-          </ul>
-        </section>
-
-        <!-- Panneau des buzzers -->
-        <section class="panel" data-testid="buzzers-panel">
-          <h2>Buzzers</h2>
-          <ul class="panel__list">
-            @for (slot of buzzerSlots(); track slot.index) {
-              <li
-                class="panel__item"
-                [class.panel__item--inactive]="!slot.username"
-                data-testid="buzzer-slot"
-              >
-                <span class="panel__order">{{ slot.index + 1 }}</span>
-                @if (slot.username) {
-                  <span class="panel__name" data-testid="buzzer-username">{{ slot.username }}</span>
-                } @else {
-                  <span class="panel__name panel__name--empty" data-testid="buzzer-username">—</span>
-                }
-              </li>
-            }
-          </ul>
-        </section>
-      </div>
-
-      <!-- Actions -->
-      <div class="lobby__actions" data-testid="lobby-actions">
+      <div class="lobby-actions" data-testid="lobby-actions">
         <button
-          class="btn btn--primary"
-          (click)="onStartGame()"
-          [disabled]="isStarting()"
-          data-testid="btn-start"
-        >
-          @if (isStarting()) {
-            Démarrage en cours...
-          } @else {
-            Démarrer la partie
-          }
-        </button>
-        <button
-          class="btn btn--danger"
+          class="btn-cancel-game"
           (click)="onDeleteGame()"
           [disabled]="isDeleting()"
           data-testid="btn-delete"
         >
           Annuler la partie
         </button>
+        <button
+          class="btn-start"
+          [class.loading]="isStarting()"
+          (click)="onStartGame()"
+          [disabled]="isStarting()"
+          data-testid="btn-start"
+        >
+          @if (isStarting()) {
+            <div class="spinner"></div>
+            Demarrage en cours...
+          } @else {
+            Demarrer la partie
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Barre de readiness -->
+    <div
+      class="readiness-bar-wrap"
+      [class.insufficient]="!isReady()"
+      [class.ready]="isReady()"
+      data-testid="readiness-bar"
+    >
+      <div class="readiness-header">
+        <span class="readiness-title">Readiness</span>
+        <span
+          class="readiness-count"
+          [class.insufficient]="!isReady()"
+          [class.ready]="isReady()"
+          data-testid="readiness-label"
+        >
+          {{ gs.connectedBuzzers().length }} / {{ gs.state().participants.length }} buzzers connectes
+        </span>
+      </div>
+      <div class="bar-track">
+        <div
+          class="bar-fill"
+          [class.insufficient]="!isReady()"
+          [class.ready]="isReady()"
+          [style.width.%]="readinessPercent()"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Grille 2 colonnes : participants + buzzers -->
+    <div class="lobby-grid">
+
+      <!-- Panneau participants -->
+      <div class="panel" data-testid="participants-panel">
+        <div class="panel-header">
+          <span class="panel-title">Participants</span>
+          <span style="font-size:11px;color:var(--muted)">{{ gs.state().participants.length }} joueurs enregistres</span>
+        </div>
+        @for (entry of participantsWithBuzzer(); track entry.order) {
+          <div class="participant-row" data-testid="participant-item">
+            <span class="p-order">{{ entry.order }}</span>
+            <span class="p-name">{{ entry.name }}</span>
+            @if (entry.buzzerUsername) {
+              <div class="buzzer-tag connected" data-testid="buzzer-status">
+                <div class="buzzer-tag-dot"></div>
+                {{ entry.buzzerUsername }}
+              </div>
+            } @else {
+              <div class="buzzer-tag offline" data-testid="buzzer-status">
+                <div class="buzzer-tag-dot"></div>
+                Non connecte
+              </div>
+            }
+          </div>
+        }
       </div>
 
-      @if (toastMessage()) {
-        <div
-          class="toast"
-          [class.toast--error]="toastIsError()"
-          [class.toast--success]="!toastIsError()"
-          data-testid="toast"
-        >
-          {{ toastMessage() }}
+      <!-- Panneau buzzers -->
+      <div class="panel" data-testid="buzzers-panel">
+        <div class="panel-header">
+          <span class="panel-title">Buzzers</span>
+          <span style="font-size:11px;color:var(--green);font-weight:600">{{ gs.connectedBuzzers().length }} / {{ MAX_BUZZER_SLOTS }} connectes</span>
         </div>
-      }
+        @for (slot of buzzerSlots(); track slot.index) {
+          <div class="buzzer-row" [style.opacity]="slot.username ? 1 : 0.4" data-testid="buzzer-slot">
+            <div class="buzzer-avatar" [class.online]="slot.username" [class.offline]="!slot.username">
+              B{{ slot.index + 1 }}
+            </div>
+            <div class="buzzer-info">
+              @if (slot.username) {
+                <div class="buzzer-name" data-testid="buzzer-username">{{ slot.username }}</div>
+              } @else {
+                <div class="buzzer-name offline" data-testid="buzzer-username">—</div>
+              }
+            </div>
+            @if (slot.username) {
+              <div class="buzzer-online-dot"></div>
+            } @else {
+              <div class="buzzer-offline-dot"></div>
+            }
+          </div>
+        }
+      </div>
 
-      <app-confirm-dialog #confirmDialog />
     </div>
+
+    @if (toastMessage()) {
+      <div
+        class="toast"
+        [class.toast--error]="toastIsError()"
+        [class.toast--success]="!toastIsError()"
+        data-testid="toast"
+      >
+        {{ toastMessage() }}
+      </div>
+    }
+
+    <app-confirm-dialog #confirmDialog />
   `,
-  styles: [`
-    .lobby { padding: 24px; max-width: 800px; margin: 0 auto; }
-    .lobby__header { margin-bottom: 24px; }
-    .lobby__header h1 { margin: 0 0 8px; font-size: 1.5rem; }
-    .lobby__meta { display: flex; gap: 16px; color: #6c757d; font-size: 0.9rem; }
-    .readiness { margin-bottom: 24px; }
-    .readiness__bar { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
-    .readiness__fill { height: 100%; transition: width 0.3s ease; border-radius: 4px; }
-    .readiness--ready .readiness__fill { background: #28a745; }
-    .readiness--waiting .readiness__fill { background: #fd7e14; }
-    .readiness__label { display: block; margin-top: 6px; font-size: 0.85rem; color: #495057; }
-    .lobby__panels { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-    .panel h2 { font-size: 1.1rem; margin: 0 0 12px; }
-    .panel__list { list-style: none; padding: 0; margin: 0; }
-    .panel__item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; }
-    .panel__item--inactive { opacity: 0.4; }
-    .panel__order { font-weight: 600; min-width: 20px; color: #6c757d; }
-    .panel__name { flex: 1; }
-    .panel__name--empty { color: #adb5bd; }
-    .panel__buzzer { font-size: 0.8rem; }
-    .panel__buzzer--connected { color: #28a745; }
-    .panel__buzzer--disconnected { color: #adb5bd; }
-    .lobby__actions { display: flex; gap: 12px; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { background: #6c757d; cursor: not-allowed; }
-    .btn--danger { background: #dc3545; color: #fff; }
-    .btn--danger:disabled { opacity: 0.6; cursor: not-allowed; }
-    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; color: #fff; }
-    .toast--error { background: #dc3545; }
-    .toast--success { background: #198754; }
-  `],
+  styles: [],
 })
 export class LobbyComponent {
   protected readonly gs = inject(GameStateService);
   private readonly gameService = inject(GameService);
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
+
+  protected readonly MAX_BUZZER_SLOTS = MAX_BUZZER_SLOTS;
 
   @ViewChild('confirmDialog') confirmDialog!: ConfirmDialogComponent;
 

@@ -107,17 +107,17 @@ describe('QuestionListComponent', () => {
     expect(row.textContent).toContain('Quelle est la capitale');
     expect(row.textContent).toContain('Culture');
     expect(row.textContent).toContain('MCQ');
-    expect(row.textContent).toContain('30s');
+    expect(row.textContent).toContain('30 s');
     expect(row.textContent).toContain('200 pts');
     expect(el.querySelector('[data-testid="icon-image"]')).toBeTruthy();
     expect(el.querySelector('[data-testid="icon-audio"]')).toBeTruthy();
   });
 
   // CA-2: No media icons when paths are null
-  it('CA-2: hides media icons when no media attached', () => {
+  it('CA-2: media icons are inactive when no media attached', () => {
     setup([createMockQuestion()]);
-    expect(el.querySelector('[data-testid="icon-image"]')).toBeNull();
-    expect(el.querySelector('[data-testid="icon-audio"]')).toBeNull();
+    expect(el.querySelector('[data-testid="icon-image"]')!.classList.contains('inactive')).toBe(true);
+    expect(el.querySelector('[data-testid="icon-audio"]')!.classList.contains('inactive')).toBe(true);
   });
 
   // CA-3: Total count displayed
@@ -153,7 +153,7 @@ describe('QuestionListComponent', () => {
     fixture.detectChanges();
 
     const maxInput = el.querySelector('[data-testid="filter-level-max"]') as HTMLInputElement;
-    expect(maxInput.classList.contains('filter--invalid')).toBe(true);
+    expect(maxInput.classList.contains('error')).toBe(true);
   });
 
   // CA-7: Reset filters clears all and reloads
@@ -266,14 +266,22 @@ describe('QuestionListComponent', () => {
   // Level dots display
   it('CA-2: displays correct number of active level dots', () => {
     setup([createMockQuestion({ level: 4 })]);
-    const dots = el.querySelectorAll('[data-testid="level-dots"] .dot--active');
-    expect(dots.length).toBe(4);
+    const allDots = el.querySelectorAll('[data-testid="level-dots"] .level-dot');
+    // Dots 1-4 should have on-N classes, dot 5 should not
+    const activeDots = Array.from(allDots).filter(dot =>
+      dot.classList.contains('on-1') ||
+      dot.classList.contains('on-2') ||
+      dot.classList.contains('on-3') ||
+      dot.classList.contains('on-4') ||
+      dot.classList.contains('on-5')
+    );
+    expect(activeDots.length).toBe(4);
   });
 
   // Type badges
   it('CA-2: displays SPEED badge for SPEED questions', () => {
     setup([createMockQuestion({ type: 'SPEED' })]);
-    expect(el.querySelector('.badge--speed')).toBeTruthy();
-    expect(el.querySelector('.badge--speed')!.textContent).toBe('SPEED');
+    expect(el.querySelector('.badge-speed')).toBeTruthy();
+    expect(el.querySelector('.badge-speed')!.textContent).toBe('SPEED');
   });
 });

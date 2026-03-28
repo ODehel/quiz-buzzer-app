@@ -59,6 +59,7 @@ function createMockGame(overrides: Partial<Game> = {}): Game {
     quiz_id: 'q1',
     quiz_name: 'Mon Quiz',
     status: 'COMPLETED' as GameStatus,
+    participants: [],
     created_at: new Date().toISOString(),
     started_at: null,
     completed_at: null,
@@ -198,7 +199,7 @@ describe('DashboardComponent', () => {
     setup({ status: 'OPEN', gameId: 'g1', quizId: 'quiz-abc' });
     const banner = fixture.nativeElement.querySelector('[data-testid="active-banner"]');
     expect(banner).toBeTruthy();
-    expect(banner.textContent).toContain('Partie en cours');
+    expect(banner.textContent).toContain('En cours');
   });
 
   // CA-7: No banner when isPiloting is false
@@ -248,11 +249,11 @@ describe('DashboardComponent', () => {
   // CA-13: Recent games listed with quiz name, status, date
   it('CA-13: displays recent games with quiz name and status', () => {
     const games = [
-      createMockGame({ id: '1', quiz_name: 'Quiz A', status: 'COMPLETED' }),
-      createMockGame({ id: '2', quiz_name: 'Quiz B', status: 'PENDING' }),
+      createMockGame({ id: '1', quiz_name: 'Quiz A', status: 'COMPLETED', participants: [{ order: 1, name: 'Alice' }] }),
+      createMockGame({ id: '2', quiz_name: 'Quiz B', status: 'PENDING', participants: [{ order: 1, name: 'Bob' }, { order: 2, name: 'Charlie' }] }),
     ];
     setup({}, { games });
-    const rows = fixture.nativeElement.querySelectorAll('[data-testid="games-table"] tbody tr');
+    const rows = fixture.nativeElement.querySelectorAll('[data-testid="games-table"] .games-row');
     expect(rows.length).toBe(2);
     expect(rows[0].textContent).toContain('Quiz A');
     expect(rows[1].textContent).toContain('Quiz B');
@@ -260,7 +261,7 @@ describe('DashboardComponent', () => {
 
   // CA-14: "Voir" link for COMPLETED games goes to /games/:id/results
   it('CA-14: game link goes to /games/:id/results for COMPLETED', () => {
-    const games = [createMockGame({ id: 'g1', status: 'COMPLETED' })];
+    const games = [createMockGame({ id: 'g1', status: 'COMPLETED', participants: [{ order: 1, name: 'Alice' }] })];
     setup({}, { games });
     const link = fixture.nativeElement.querySelector('[data-testid="game-link"]');
     expect(link.getAttribute('href')).toBe('/games/g1/results');
@@ -268,7 +269,7 @@ describe('DashboardComponent', () => {
 
   // CA-15: "Voir" link for OPEN/QUESTION_* goes to /pilot/play
   it('CA-15: game link goes to /pilot/play for OPEN', () => {
-    const games = [createMockGame({ id: 'g1', status: 'OPEN' })];
+    const games = [createMockGame({ id: 'g1', status: 'OPEN', participants: [{ order: 1, name: 'Alice' }] })];
     setup({}, { games });
     const link = fixture.nativeElement.querySelector('[data-testid="game-link"]');
     expect(link.getAttribute('href')).toBe('/pilot/play');
@@ -276,7 +277,7 @@ describe('DashboardComponent', () => {
 
   // CA-16: "Voir" link for PENDING goes to /pilot/lobby
   it('CA-16: game link goes to /pilot/lobby for PENDING', () => {
-    const games = [createMockGame({ id: 'g1', status: 'PENDING' })];
+    const games = [createMockGame({ id: 'g1', status: 'PENDING', participants: [{ order: 1, name: 'Alice' }] })];
     setup({}, { games });
     const link = fixture.nativeElement.querySelector('[data-testid="game-link"]');
     expect(link.getAttribute('href')).toBe('/pilot/lobby');
@@ -285,16 +286,16 @@ describe('DashboardComponent', () => {
   // CA-17: "Nouvelle partie" button always present
   it('CA-17: new game button is always visible', () => {
     setup();
-    const btn = fixture.nativeElement.querySelector('.btn--primary');
+    const btn = fixture.nativeElement.querySelector('.btn-primary');
     expect(btn).toBeTruthy();
-    expect(btn.textContent.trim()).toBe('Nouvelle partie');
+    expect(btn.textContent.trim()).toContain('Nouvelle partie');
   });
 
   // CA-18: When piloting, new game click shows toast and does not navigate
   it('CA-18: shows toast when clicking new game during active game', fakeAsync(() => {
     setup({ status: 'OPEN', gameId: 'g1' });
     const navigateSpy = jest.spyOn(router, 'navigate');
-    const btn = fixture.nativeElement.querySelector('.btn--primary');
+    const btn = fixture.nativeElement.querySelector('.btn-primary');
     btn.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-testid="toast"]')).toBeTruthy();
@@ -307,16 +308,16 @@ describe('DashboardComponent', () => {
   it('CA-19: navigates to /games/new when no active game', () => {
     setup();
     const navigateSpy = jest.spyOn(router, 'navigate');
-    const btn = fixture.nativeElement.querySelector('.btn--primary');
+    const btn = fixture.nativeElement.querySelector('.btn-primary');
     btn.click();
     expect(navigateSpy).toHaveBeenCalledWith(['/games/new']);
   });
 
-  // CA-25: Health check called and version displayed
-  it('CA-25: displays server version from health check', () => {
+  // CA-25: Health check is called on init (version is not displayed in the new template)
+  it('CA-25: health check endpoint is called on init', () => {
     setup();
-    const versionEl = fixture.nativeElement.querySelector('[data-testid="server-version"]');
-    expect(versionEl).toBeTruthy();
-    expect(versionEl.textContent).toContain('1.2.3');
+    // The health request is matched and flushed in setup(); if it were not
+    // issued, httpMock.verify() in afterEach would fail. This confirms the
+    // component still calls GET /api/v1/health at startup.
   });
 });

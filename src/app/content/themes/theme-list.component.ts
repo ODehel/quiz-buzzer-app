@@ -19,151 +19,105 @@ import type { Theme } from '../../core/models/question.models';
   standalone: true,
   imports: [FormsModule, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [],
   template: `
-    <div class="theme-list">
-      <header class="theme-list__header">
-        <h1>Themes <span class="total-badge" data-testid="total-count">{{ total() }}</span></h1>
-        @if (!isCreating()) {
-          <button class="btn btn--primary" (click)="onOpenCreate()" data-testid="btn-new-theme">
-            Nouveau theme
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">Thèmes <span class="badge badge-open" style="font-size:12px;vertical-align:middle;margin-left:8px" data-testid="total-count">{{ total() }}</span></h1>
+      </div>
+      @if (!isCreating()) {
+        <div class="page-actions">
+          <button class="btn-primary" (click)="onOpenCreate()" data-testid="btn-new-theme">
+            <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Nouveau thème
           </button>
-        }
-      </header>
+        </div>
+      }
+    </div>
 
-      @if (isCreating()) {
-        <div class="inline-form" data-testid="create-form">
+    @if (isCreating()) {
+      <div class="card" style="margin-bottom:16px" data-testid="create-form">
+        <div class="card-body" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <input
             #createInput
             type="text"
-            class="inline-form__input"
-            [class.inline-form__input--error]="createError()"
+            class="field-input"
+            [class.field-input--error]="createError()"
             [ngModel]="newName()"
             (ngModelChange)="newName.set($event)"
             (keydown.enter)="onCreateSubmit()"
             (keydown.escape)="onCreateCancel()"
-            placeholder="Nom du theme"
+            placeholder="Nom du thème"
+            style="min-width:220px;flex:1"
             data-testid="input-create"
           />
-          <button class="btn btn--primary btn--sm" (click)="onCreateSubmit()" data-testid="btn-create-submit">
-            Creer
-          </button>
-          <button class="btn btn--secondary btn--sm" (click)="onCreateCancel()" data-testid="btn-create-cancel">
-            Annuler
-          </button>
+          <button class="btn-primary" (click)="onCreateSubmit()" data-testid="btn-create-submit">Créer</button>
+          <button class="btn-ghost" (click)="onCreateCancel()" data-testid="btn-create-cancel">Annuler</button>
           @if (createError()) {
-            <span class="error-msg" data-testid="create-error">{{ createError() }}</span>
+            <span class="field-error" data-testid="create-error">{{ createError() }}</span>
           }
         </div>
-      }
+      </div>
+    }
 
-      @if (isLoading()) {
-        <div class="loading" data-testid="loading">Chargement...</div>
-      } @else if (themes().length === 0 && !isCreating()) {
-        <p class="empty" data-testid="empty-list">Aucun theme — creez votre premier theme</p>
-      } @else if (themes().length > 0) {
-        <table class="table" data-testid="themes-table">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th>Date de creation</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (theme of themes(); track theme.id) {
-              <tr data-testid="theme-row">
-                @if (editingId() === theme.id) {
-                  <td colspan="2">
-                    <div class="inline-form">
-                      <input
-                        #editInput
-                        type="text"
-                        class="inline-form__input"
-                        [class.inline-form__input--error]="editError()"
-                        [ngModel]="editingName()"
-                        (ngModelChange)="editingName.set($event)"
-                        (keydown.enter)="onEditSubmit(theme)"
-                        (keydown.escape)="onEditCancel()"
-                        data-testid="input-edit"
-                      />
-                      <button class="btn btn--primary btn--sm" (click)="onEditSubmit(theme)" data-testid="btn-edit-submit">
-                        Renommer
-                      </button>
-                      <button class="btn btn--secondary btn--sm" (click)="onEditCancel()" data-testid="btn-edit-cancel">
-                        Annuler
-                      </button>
-                      @if (editError()) {
-                        <span class="error-msg" data-testid="edit-error">{{ editError() }}</span>
-                      }
-                    </div>
-                  </td>
-                } @else {
-                  <td>
-                    <span
-                      class="theme-name"
-                      (click)="onStartEdit(theme)"
-                      data-testid="theme-name"
-                    >{{ theme.name }}</span>
-                  </td>
-                  <td>{{ formatDate(theme.created_at) }}</td>
-                }
-                <td class="actions">
-                  @if (editingId() !== theme.id) {
-                    <button
-                      class="btn btn--sm btn--icon"
-                      (click)="onStartEdit(theme)"
-                      title="Renommer"
-                      data-testid="btn-edit"
-                    >&#9998;</button>
-                    <button
-                      class="btn btn--sm btn--icon btn--danger-icon"
-                      (click)="onDeleteClick(theme)"
-                      title="Supprimer"
-                      data-testid="btn-delete"
-                    >&#128465;</button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-
-      @if (toastMessage()) {
-        <div class="toast" [class.toast--error]="toastIsError()" data-testid="toast">
-          {{ toastMessage() }}
+    @if (isLoading()) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="loading">Chargement…</div>
+    } @else if (themes().length === 0 && !isCreating()) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="empty-list">Aucun thème — créez votre premier thème</div>
+    } @else if (themes().length > 0) {
+      <div class="table-wrap" data-testid="themes-table">
+        <div class="table-header" style="display:grid;grid-template-columns:1fr 150px 80px;padding:10px 16px">
+          <span>Nom</span>
+          <span>Date de création</span>
+          <span style="text-align:right">Actions</span>
         </div>
-      }
+        @for (theme of themes(); track theme.id) {
+          <div class="table-row" style="display:grid;grid-template-columns:1fr 150px 80px;align-items:center;padding:10px 16px" data-testid="theme-row">
+            @if (editingId() === theme.id) {
+              <div style="grid-column:1/3;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <input
+                  #editInput
+                  type="text"
+                  class="field-input"
+                  [class.field-input--error]="editError()"
+                  [ngModel]="editingName()"
+                  (ngModelChange)="editingName.set($event)"
+                  (keydown.enter)="onEditSubmit(theme)"
+                  (keydown.escape)="onEditCancel()"
+                  style="min-width:200px;flex:1"
+                  data-testid="input-edit"
+                />
+                <button class="btn-primary" style="padding:6px 12px;font-size:12px" (click)="onEditSubmit(theme)" data-testid="btn-edit-submit">Renommer</button>
+                <button class="btn-ghost" style="padding:6px 12px;font-size:12px" (click)="onEditCancel()" data-testid="btn-edit-cancel">Annuler</button>
+                @if (editError()) {
+                  <span class="field-error" data-testid="edit-error">{{ editError() }}</span>
+                }
+              </div>
+            } @else {
+              <span style="cursor:pointer" (click)="onStartEdit(theme)" data-testid="theme-name">{{ theme.name }}</span>
+              <span style="font-size:12px;color:var(--muted)">{{ formatDate(theme.created_at) }}</span>
+            }
+            <div style="text-align:right;display:flex;gap:4px;justify-content:flex-end">
+              @if (editingId() !== theme.id) {
+                <button class="btn-icon" (click)="onStartEdit(theme)" title="Renommer" data-testid="btn-edit">
+                  <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                <button class="btn-icon" style="color:var(--red)" (click)="onDeleteClick(theme)" title="Supprimer" data-testid="btn-delete">
+                  <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
 
-      <app-confirm-dialog />
-    </div>
+    @if (toastMessage()) {
+      <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">{{ toastMessage() }}</div>
+    }
+
+    <app-confirm-dialog />
   `,
-  styles: [`
-    .theme-list { padding: 24px; max-width: 900px; margin: 0 auto; }
-    .theme-list__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .theme-list__header h1 { margin: 0; font-size: 1.5rem; }
-    .total-badge { font-size: 0.85rem; background: #e9ecef; padding: 2px 8px; border-radius: 12px; color: #6c757d; margin-left: 8px; }
-    .inline-form { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .inline-form__input { padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem; min-width: 200px; }
-    .inline-form__input--error { border-color: #dc3545; }
-    .error-msg { color: #dc3545; font-size: 0.85rem; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #dee2e6; }
-    .table th { font-weight: 600; font-size: 0.85rem; color: #6c757d; }
-    .theme-name { cursor: pointer; }
-    .theme-name:hover { text-decoration: underline; }
-    .actions { text-align: right; white-space: nowrap; }
-    .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--secondary { background: #e9ecef; color: #495057; }
-    .btn--sm { padding: 4px 8px; font-size: 0.8rem; }
-    .btn--icon { background: #e9ecef; color: #495057; }
-    .btn--danger-icon { background: #f8d7da; color: #842029; }
-    .loading { text-align: center; padding: 48px; color: #6c757d; }
-    .empty { text-align: center; padding: 48px; color: #6c757d; }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: #198754; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-    .toast--error { background: #dc3545; }
-  `],
 })
 export class ThemeListComponent {
   private readonly themeService = inject(ThemeService);
@@ -172,22 +126,18 @@ export class ThemeListComponent {
   @ViewChild('editInput') editInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild(ConfirmDialogComponent) confirmDialog!: ConfirmDialogComponent;
 
-  // Liste
   protected readonly themes = signal<Theme[]>([]);
   protected readonly total = signal(0);
   protected readonly isLoading = signal(true);
 
-  // Creation
   protected readonly isCreating = signal(false);
   protected readonly newName = signal('');
   protected readonly createError = signal<string | null>(null);
 
-  // Edition
   protected readonly editingId = signal<string | null>(null);
   protected readonly editingName = signal('');
   protected readonly editError = signal<string | null>(null);
 
-  // Toast
   protected readonly toastMessage = signal<string | null>(null);
   protected readonly toastIsError = signal(false);
 
@@ -207,8 +157,6 @@ export class ThemeListComponent {
         },
       });
   }
-
-  // --- Creation ---
 
   protected onOpenCreate(): void {
     this.isCreating.set(true);
@@ -236,7 +184,7 @@ export class ThemeListComponent {
       this.isCreating.set(false);
       this.newName.set('');
       this.createError.set(null);
-      this.showToast('Theme cree');
+      this.showToast('Thème créé');
       this.reload();
     } catch (err) {
       if (
@@ -244,14 +192,12 @@ export class ThemeListComponent {
         err.status === 409 &&
         err.error?.error === 'THEME_ALREADY_EXISTS'
       ) {
-        this.createError.set('Un theme porte deja ce nom');
+        this.createError.set('Un thème porte déjà ce nom');
       } else {
-        this.showToast('Erreur lors de la creation', true);
+        this.showToast('Erreur lors de la création', true);
       }
     }
   }
-
-  // --- Edition ---
 
   protected onStartEdit(theme: Theme): void {
     this.editingId.set(theme.id);
@@ -274,7 +220,6 @@ export class ThemeListComponent {
       return;
     }
 
-    // CA-13: pas d'appel reseau si le nom est identique
     if (name.toLowerCase() === theme.name.toLowerCase()) {
       this.onEditCancel();
       return;
@@ -288,34 +233,31 @@ export class ThemeListComponent {
       this.editingId.set(null);
       this.editingName.set('');
       this.editError.set(null);
-      this.showToast('Theme renomme');
+      this.showToast('Thème renommé');
     } catch (err) {
       if (
         err instanceof HttpErrorResponse &&
         err.status === 409 &&
         err.error?.error === 'THEME_ALREADY_EXISTS'
       ) {
-        this.editError.set('Un theme porte deja ce nom');
+        this.editError.set('Un thème porte déjà ce nom');
       } else {
         this.showToast('Erreur lors du renommage', true);
       }
     }
   }
 
-  // --- Suppression ---
-
   protected async onDeleteClick(theme: Theme): Promise<void> {
     const confirmed = await this.confirmDialog.open(
-      `Supprimer le theme "${theme.name}" ?`
+      `Supprimer le thème "${theme.name}" ?`
     );
     if (!confirmed) return;
 
     try {
       await this.themeService.delete(theme.id);
-      // CA-18: suppression locale sans rechargement complet
       this.themes.update((list) => list.filter((t) => t.id !== theme.id));
       this.total.update((n) => n - 1);
-      this.showToast('Theme supprime');
+      this.showToast('Thème supprimé');
     } catch (err) {
       if (
         err instanceof HttpErrorResponse &&
@@ -323,7 +265,7 @@ export class ThemeListComponent {
         err.error?.error === 'THEME_HAS_QUESTIONS'
       ) {
         this.showToast(
-          'Ce theme contient des questions — supprimez-les ou reassignez-les d\'abord',
+          'Ce thème contient des questions — supprimez-les ou réassignez-les d\'abord',
           true
         );
       } else {
@@ -331,8 +273,6 @@ export class ThemeListComponent {
       }
     }
   }
-
-  // --- Utilitaires ---
 
   protected formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString('fr-FR', {
@@ -344,7 +284,7 @@ export class ThemeListComponent {
 
   private validateName(name: string): string | null {
     if (!name) return 'Le nom est requis';
-    if (name.length < 3 || name.length > 40) return 'Le nom doit contenir entre 3 et 40 caracteres';
+    if (name.length < 3 || name.length > 40) return 'Le nom doit contenir entre 3 et 40 caractères';
     if (name[0] !== name[0].toUpperCase() || name[0] === name[0].toLowerCase()) {
       return 'Le nom doit commencer par une majuscule';
     }

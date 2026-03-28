@@ -34,14 +34,14 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="play" data-testid="play">
+    <div class="app-shell" data-testid="play">
       <!-- CA-24: Error banner for IN_ERROR -->
       @if (gs.status() === 'IN_ERROR') {
-        <div class="play__error-banner" data-testid="error-banner">
+        <div class="toast-error" style="position:relative;bottom:auto;right:auto;max-width:none;border-radius:0;display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:row" data-testid="error-banner">
           <span>La partie est en erreur serveur — le jeu a été interrompu</span>
           <!-- CA-25: Partial results button -->
           <a
-            class="play__error-btn"
+            class="btn-outline-sm"
             [routerLink]="['/games', gs.state().gameId, 'results']"
             data-testid="btn-partial-results"
           >
@@ -50,20 +50,54 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
         </div>
       }
 
-      <div class="play__layout">
+      <!-- Topbar pilotage -->
+      <header class="topbar topbar--pilot">
+        <div class="topbar-logo">Quiz<span>Buzzer</span></div>
+        <div class="topbar-divider"></div>
+        <div class="topbar-quiz">
+          <strong>{{ gs.state().quizId }}</strong>
+          &middot; Question <strong>{{ (gs.state().questionIndex ?? 0) + 1 }}</strong>
+          @if (gs.state().totalQuestions) {
+            / {{ gs.state().totalQuestions }}
+          }
+        </div>
+        <div class="topbar-spacer"></div>
+        <!-- Status chip -->
+        <div class="status-chip"
+          [class.status-chip--open]="gs.status() === 'QUESTION_OPEN' || gs.status() === 'QUESTION_TITLE' || gs.status() === 'OPEN'"
+          [class.status-chip--closed]="gs.status() === 'QUESTION_CLOSED'"
+          [class.status-chip--buzzed]="gs.status() === 'QUESTION_BUZZED'">
+          <div class="chip-dot"></div>
+          @switch (gs.status()) {
+            @case ('OPEN') { EN ATTENTE }
+            @case ('QUESTION_TITLE') { TITRE AFFICHÉ }
+            @case ('QUESTION_OPEN') { QUESTION OUVERTE }
+            @case ('QUESTION_CLOSED') { QUESTION FERMÉE }
+            @case ('QUESTION_BUZZED') { BUZZER ACTIF }
+            @case ('IN_ERROR') { ERREUR }
+            @default { {{ gs.status() }} }
+          }
+        </div>
+        <div class="topbar-divider"></div>
+        <div class="ws-dot"></div>
+        <span class="ws-label">Connecté</span>
+      </header>
+
+      <!-- Layout 3 colonnes -->
+      <div class="play-layout">
         <!-- Left column: Player list -->
-        <aside class="play__sidebar play__sidebar--left" data-testid="sidebar-left">
+        <div class="col col-left" data-testid="sidebar-left">
           <app-player-list />
-        </aside>
+        </div>
 
         <!-- Center: Main control area -->
-        <main class="play__main" data-testid="main-area">
+        <div class="col col-mid" data-testid="main-area">
           <!-- CA-26: No piloting actions when IN_ERROR -->
           @if (gs.status() !== 'IN_ERROR') {
             @if (gs.status() === 'OPEN') {
-              <div class="play__trigger" data-testid="trigger-phase">
+              <div style="display:flex;align-items:center;justify-content:center;flex:1">
                 <button
-                  class="btn btn--primary btn--lg"
+                  class="btn-primary btn-primary--lg"
                   [disabled]="isWaitingTrigger()"
                   (click)="onTriggerTitle()"
                   data-testid="btn-trigger-title"
@@ -90,17 +124,17 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
               }
             }
           }
-        </main>
+        </div>
 
         <!-- Right column: Sound panel -->
-        <aside class="play__sidebar play__sidebar--right" data-testid="sidebar-right">
+        <div class="col col-right" data-testid="sidebar-right">
           @if (gs.status() !== 'IN_ERROR') {
             <app-sound-panel
               (triggerSystemSound)="ws.send($event)"
               (playSound)="ws.send($event)"
               (triggerRanking)="ws.send({ type: 'trigger_intermediate_ranking' })" />
           }
-        </aside>
+        </div>
       </div>
 
       <!-- Ranking overlay -->
@@ -109,30 +143,13 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
       }
 
       @if (toastMessage()) {
-        <div class="toast toast--error" data-testid="toast">
+        <div class="toast-error" data-testid="toast">
           {{ toastMessage() }}
         </div>
       }
     </div>
   `,
-  styles: [`
-    .play { height: 100%; display: flex; flex-direction: column; }
-    .play__error-banner { background: #dc3545; color: #fff; padding: 12px 24px; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 16px; }
-    .play__error-btn { background: #fff; color: #dc3545; padding: 6px 16px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-    .play__error-btn:hover { background: #f8d7da; }
-    .play__layout { display: grid; grid-template-columns: 250px 1fr 280px; gap: 0; flex: 1; overflow: hidden; }
-    .play__sidebar { border-right: 1px solid #dee2e6; overflow-y: auto; }
-    .play__sidebar--right { border-right: none; border-left: 1px solid #dee2e6; }
-    .play__main { padding: 24px; overflow-y: auto; }
-    .play__trigger { display: flex; align-items: center; justify-content: center; height: 100%; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { background: #6c757d; cursor: not-allowed; }
-    .btn--lg { padding: 16px 48px; font-size: 1.2rem; }
-    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; color: #fff; }
-    .toast--error { background: #dc3545; }
-    .toast--info { background: #0d6efd; }
-  `],
+  styles: [],
 })
 export class PlayComponent {
   protected readonly gs = inject(GameStateService);

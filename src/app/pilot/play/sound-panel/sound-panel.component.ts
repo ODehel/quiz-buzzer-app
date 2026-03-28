@@ -21,107 +21,114 @@ import type { OutboundMessage } from '../../../core/models/websocket.models';
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="sound-panel">
-      <h3 class="sound-panel__title">Sons</h3>
+    <div class="col-header">
+      <span class="col-title">Sons &amp; Classement</span>
+    </div>
+    <div class="col-right-body">
 
-      <section class="sound-panel__system">
-        <h4>Sons système</h4>
-        <div class="sound-panel__buttons">
+      <!-- System sounds -->
+      <div class="sound-section">
+        <div class="sound-section-title">Sons syst&egrave;me</div>
+        <div class="sound-btns">
           <button
-            class="btn btn--sm btn--outline"
+            class="sound-btn"
             (click)="onTriggerSystemSound('WAITING')"
             data-testid="btn-waiting"
           >
-            Waiting
+            <span class="sound-icon">&#9200;</span>
+            Compte &agrave; rebours
           </button>
           <button
-            class="btn btn--sm btn--outline"
+            class="sound-btn"
             (click)="onTriggerSystemSound('SUSPENSE')"
             data-testid="btn-suspense"
           >
+            <span class="sound-icon">&#127925;</span>
             Suspense
           </button>
         </div>
-      </section>
+      </div>
 
-      <section class="sound-panel__jingle">
-        <h4>Jingles</h4>
+      <!-- Jingles -->
+      <div class="sound-section">
+        <div class="sound-section-title">Jingles</div>
 
-        <label class="field">
-          <span class="field__label">Jingle</span>
-          <select
-            [ngModel]="selectedId()"
-            (ngModelChange)="selectedId.set($event)"
-            data-testid="select-jingle"
-          >
-            <option [ngValue]="null">-- Choisir --</option>
-            @for (s of sounds(); track s.id) {
-              <option [ngValue]="s.id">{{ s.name }}</option>
-            }
-          </select>
-        </label>
+        <select
+          class="jingle-select"
+          [ngModel]="selectedId()"
+          (ngModelChange)="selectedId.set($event)"
+          data-testid="select-jingle"
+          style="margin-bottom:6px"
+        >
+          <option [ngValue]="null">-- Choisir un jingle --</option>
+          @for (s of sounds(); track s.id) {
+            <option [ngValue]="s.id">{{ s.name }}</option>
+          }
+        </select>
 
-        <label class="field">
-          <span class="field__label">Cible</span>
-          <select
-            [ngModel]="selectedTarget()"
-            (ngModelChange)="selectedTarget.set($event)"
-            data-testid="select-target"
-          >
-            <option value="ALL">Tous</option>
-            @for (buzzer of gs.connectedBuzzers(); track buzzer) {
-              <option [value]="buzzer">{{ buzzer }}</option>
-            }
-          </select>
-        </label>
+        <select
+          class="jingle-select"
+          [ngModel]="selectedTarget()"
+          (ngModelChange)="selectedTarget.set($event)"
+          data-testid="select-target"
+          style="margin-bottom:6px"
+        >
+          <option value="ALL">Tous</option>
+          @for (buzzer of gs.connectedBuzzers(); track buzzer) {
+            <option [value]="buzzer">{{ buzzer }}</option>
+          }
+        </select>
 
         <button
-          class="btn btn--sm btn--primary"
+          class="btn-play-jingle"
           [disabled]="!canSend()"
           (click)="onSendJingle()"
           data-testid="btn-send-jingle"
         >
-          Envoyer
+          &#9654; Jouer
         </button>
-      </section>
+      </div>
 
-      <section class="sound-panel__ranking">
+      <!-- Ranking -->
+      <div class="sound-section">
+        <div class="sound-section-title">Classement</div>
         <button
-          class="btn btn--sm btn--outline btn--ranking"
+          class="ranking-btn"
           (click)="triggerRanking.emit()"
           data-testid="btn-ranking"
         >
-          Classement
+          Afficher le classement
         </button>
-      </section>
+      </div>
 
-      @if (toastMessage()) {
-        <div class="toast toast--error" data-testid="toast">
-          {{ toastMessage() }}
-        </div>
-      }
+      <!-- Cumulative scores -->
+      <div class="col-header" style="margin-top:auto">
+        <span class="col-title">Scores cumul&eacute;s</span>
+      </div>
+      <div class="scores-list">
+        @for (p of sortedParticipants(); track p.name; let i = $index) {
+          <div class="score-row">
+            <span class="score-rank"
+              [class.gold]="i === 0"
+              [class.silver]="i === 1"
+              [class.bronze]="i === 2">
+              {{ i + 1 }}
+            </span>
+            <span class="score-name">{{ p.name }}</span>
+            <span class="score-val">{{ p.cumulative_score }}</span>
+          </div>
+        }
+      </div>
+
     </div>
+
+    @if (toastMessage()) {
+      <div class="toast-error" data-testid="toast">
+        {{ toastMessage() }}
+      </div>
+    }
   `,
-  styles: [`
-    .sound-panel { padding: 12px; }
-    .sound-panel__title { margin: 0 0 12px; font-size: 1rem; }
-    .sound-panel__system { margin-bottom: 16px; }
-    .sound-panel__system h4, .sound-panel__jingle h4 { margin: 0 0 8px; font-size: 0.85rem; color: #6c757d; }
-    .sound-panel__buttons { display: flex; gap: 8px; }
-    .sound-panel__ranking { margin-top: 16px; }
-    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-    .field__label { font-size: 0.75rem; color: #6c757d; }
-    .field select { padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.85rem; }
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
-    .btn--sm { padding: 6px 12px; font-size: 0.8rem; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { opacity: 0.5; cursor: default; }
-    .btn--outline { background: #fff; border: 1px solid #ced4da; color: #495057; }
-    .btn--outline:hover { background: #f8f9fa; }
-    .btn--ranking { width: 100%; }
-    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-    .toast--error { background: #dc3545; color: #fff; }
-  `],
+  styles: [],
 })
 export class SoundPanelComponent {
   protected readonly gs = inject(GameStateService);
@@ -137,6 +144,11 @@ export class SoundPanelComponent {
   protected readonly canSend = computed(() => this.selectedId() !== null);
 
   protected readonly toastMessage = signal<string | null>(null);
+
+  protected readonly sortedParticipants = computed(() => {
+    const participants = [...this.gs.state().participants];
+    return participants.sort((a, b) => b.cumulative_score - a.cumulative_score);
+  });
 
   constructor() {
     this.soundService

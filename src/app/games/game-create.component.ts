@@ -21,159 +21,207 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
   imports: [FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="game-create">
-      <header class="game-create__header">
-        <h1>Nouvelle partie</h1>
-        <a routerLink="/games" class="btn btn--secondary" data-testid="btn-back">
-          Retour
-        </a>
-      </header>
-
-      @if (isLoadingQuizzes()) {
-        <div class="loading" data-testid="loading">Chargement...</div>
-      } @else if (quizzes().length === 0) {
-        <div class="empty-quizzes" data-testid="no-quizzes">
-          <p>Aucun quiz disponible — créez d'abord un quiz</p>
-          <a routerLink="/content/quizzes/new" class="btn btn--primary">
-            Créer un quiz
-          </a>
-        </div>
-      } @else {
-        <form (submit)="onSubmit($event)">
-          <!-- Quiz selection -->
-          <section class="form-section">
-            <label class="form-label" for="quiz-select">Quiz</label>
-            <select
-              id="quiz-select"
-              class="form-select"
-              [ngModel]="selectedQuizId()"
-              (ngModelChange)="onQuizSelect($event)"
-              name="quiz"
-              data-testid="quiz-select"
-            >
-              <option [ngValue]="null" disabled>— Sélectionner un quiz —</option>
-              @for (quiz of quizzes(); track quiz.id) {
-                <option [ngValue]="quiz.id">{{ quiz.name }}</option>
-              }
-            </select>
-
-            @if (isLoadingPreview()) {
-              <div class="preview loading-sm" data-testid="preview-loading">Chargement de l'aperçu...</div>
-            } @else if (quizPreview()) {
-              <div class="preview" data-testid="quiz-preview">
-                <span>{{ quizPreview()!.question_ids.length }} questions</span>
-                <span>{{ previewSummary() }}</span>
-              </div>
-            }
-          </section>
-
-          <!-- Participants -->
-          <section class="form-section">
-            <label class="form-label">
-              Participants <span class="counter" data-testid="participant-counter">{{ participants().length }} / 10</span>
-            </label>
-
-            @for (participant of participants(); track $index; let i = $index) {
-              <div class="participant-row" data-testid="participant-row">
-                <input
-                  type="text"
-                  class="form-input"
-                  [class.form-input--error]="fieldErrors()['participant_' + i]"
-                  placeholder="Nom du participant"
-                  [ngModel]="participant"
-                  (ngModelChange)="onParticipantChange(i, $event)"
-                  [ngModelOptions]="{standalone: true}"
-                  maxlength="50"
-                  data-testid="participant-input"
-                />
-                <button
-                  type="button"
-                  class="btn btn--icon btn--remove"
-                  (click)="onRemoveParticipant(i)"
-                  [disabled]="participants().length <= 1"
-                  data-testid="btn-remove-participant"
-                >
-                  &times;
-                </button>
-                @if (fieldErrors()['participant_' + i]) {
-                  <span class="field-error" data-testid="field-error">
-                    {{ fieldErrors()['participant_' + i] }}
-                  </span>
-                }
-              </div>
-            }
-
-            @if (participants().length < 10) {
-              <button
-                type="button"
-                class="btn btn--secondary btn--sm"
-                (click)="onAddParticipant()"
-                data-testid="btn-add-participant"
-              >
-                + Ajouter
-              </button>
-            }
-          </section>
-
-          <!-- Submit -->
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn btn--primary"
-              [disabled]="!isValid() || isSubmitting()"
-              data-testid="btn-submit"
-            >
-              @if (isSubmitting()) {
-                Création en cours...
-              } @else {
-                Créer la partie
-              }
-            </button>
-          </div>
-        </form>
-      }
-
-      @if (toastMessage()) {
-        <div class="toast" [class.toast--error]="toastIsError()" data-testid="toast">
-          {{ toastMessage() }}
-          @if (showResumeLink()) {
-            <a routerLink="/pilot/play" class="toast__link" data-testid="resume-link">
-              Reprendre la partie
-            </a>
-          }
-        </div>
-      }
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a routerLink="/games">Parties</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Nouvelle partie</span>
     </div>
+
+    <div class="page-header">
+      <h1 class="page-title">Nouvelle partie</h1>
+      <p class="page-sub">Choisissez un quiz et enregistrez les noms des joueurs.</p>
+    </div>
+
+    @if (isLoadingQuizzes()) {
+      <div class="loading" data-testid="loading">Chargement...</div>
+    } @else if (quizzes().length === 0) {
+      <div class="empty-quizzes" data-testid="no-quizzes">
+        <p>Aucun quiz disponible — créez d'abord un quiz</p>
+        <a routerLink="/content/quizzes/new" class="btn-primary">
+          Créer un quiz
+        </a>
+      </div>
+    } @else {
+      <form (submit)="onSubmit($event)">
+        <div class="form-grid">
+
+          <!-- Left column -->
+          <div>
+
+            <!-- Quiz selection card -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Quiz</span>
+              </div>
+              <div class="card-body">
+
+                <div class="field">
+                  <label class="field-label" for="quiz-select">Sélectionner un quiz</label>
+                  <select
+                    id="quiz-select"
+                    class="field-select"
+                    [ngModel]="selectedQuizId()"
+                    (ngModelChange)="onQuizSelect($event)"
+                    name="quiz"
+                    data-testid="quiz-select"
+                  >
+                    <option [ngValue]="null" disabled>— Sélectionner un quiz —</option>
+                    @for (quiz of quizzes(); track quiz.id) {
+                      <option [ngValue]="quiz.id">{{ quiz.name }}</option>
+                    }
+                  </select>
+                </div>
+
+                @if (isLoadingPreview()) {
+                  <div class="field-hint" data-testid="preview-loading">Chargement de l'aperçu...</div>
+                } @else if (quizPreview()) {
+                  <div class="quiz-preview" data-testid="quiz-preview">
+                    <div class="preview-name">{{ quizPreview()!.name }}</div>
+                    <div class="preview-stats">
+                      <div class="preview-stat">
+                        <span class="preview-stat-val">{{ quizPreview()!.question_ids.length }}</span>
+                        <span class="preview-stat-lbl">questions</span>
+                      </div>
+                    </div>
+                    <div class="field-hint">{{ previewSummary() }}</div>
+                  </div>
+                }
+
+              </div>
+            </div>
+
+            <!-- Participants card -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Participants</span>
+                <span class="card-counter" data-testid="participant-counter">
+                  <strong>{{ participants().length }}</strong> / 10
+                </span>
+              </div>
+              <div class="card-body">
+                <div class="participants-list">
+                  @for (participant of participants(); track $index; let i = $index) {
+                    <div>
+                      <div class="participant-row" data-testid="participant-row">
+                        <span class="participant-num">{{ i + 1 }}</span>
+                        <input
+                          type="text"
+                          class="participant-input"
+                          [class.error]="fieldErrors()['participant_' + i]"
+                          placeholder="Nom du participant"
+                          [ngModel]="participant"
+                          (ngModelChange)="onParticipantChange(i, $event)"
+                          [ngModelOptions]="{standalone: true}"
+                          maxlength="50"
+                          data-testid="participant-input"
+                        />
+                        <button
+                          type="button"
+                          class="btn-icon btn-remove-p"
+                          (click)="onRemoveParticipant(i)"
+                          [disabled]="participants().length <= 1"
+                          data-testid="btn-remove-participant"
+                          title="Retirer ce participant"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      @if (fieldErrors()['participant_' + i]) {
+                        <div class="field-error" style="margin-left:24px;margin-top:3px" data-testid="field-error">
+                          {{ fieldErrors()['participant_' + i] }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (participants().length < 10) {
+                  <button
+                    type="button"
+                    class="btn-add-p"
+                    (click)="onAddParticipant()"
+                    data-testid="btn-add-participant"
+                  >
+                    + Ajouter un participant
+                  </button>
+                }
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right column (sidebar) -->
+          <div class="sidebar-right">
+
+            <!-- Actions card -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Lancer</span>
+              </div>
+              <div class="card-body">
+                <button
+                  type="submit"
+                  class="btn-primary"
+                  [disabled]="!isValid() || isSubmitting()"
+                  data-testid="btn-submit"
+                >
+                  @if (isSubmitting()) {
+                    Création en cours...
+                  } @else {
+                    ▶ Créer la partie
+                  }
+                </button>
+                <a routerLink="/games" class="btn-ghost" data-testid="btn-back">
+                  Annuler
+                </a>
+              </div>
+            </div>
+
+            <!-- Recap card -->
+            @if (quizPreview()) {
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Récapitulatif</span>
+                </div>
+                <div class="card-body recap-body">
+                  <div class="recap-row">
+                    <span class="recap-label">Quiz</span>
+                    <span class="recap-value">{{ quizPreview()!.name }}</span>
+                  </div>
+                  <div class="recap-row">
+                    <span class="recap-label">Questions</span>
+                    <span>{{ quizPreview()!.question_ids.length }}</span>
+                  </div>
+                  <div class="recap-row">
+                    <span class="recap-label">Participants</span>
+                    <span>{{ participants().length }} joueurs</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+          </div>
+
+        </div>
+      </form>
+    }
+
+    @if (toastMessage()) {
+      <div class="toast-error" [class.toast--success]="!toastIsError()" data-testid="toast">
+        <div class="toast-error-header">
+          {{ toastMessage() }}
+        </div>
+        @if (showResumeLink()) {
+          <a routerLink="/pilot/play" class="toast-link" data-testid="resume-link">
+            Reprendre la partie en cours →
+          </a>
+        }
+      </div>
+    }
   `,
-  styles: [`
-    .game-create { padding: 24px; max-width: 640px; margin: 0 auto; }
-    .game-create__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .game-create__header h1 { margin: 0; font-size: 1.5rem; }
-    .form-section { margin-bottom: 24px; }
-    .form-label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.95rem; }
-    .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.9rem; }
-    .form-input { flex: 1; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.9rem; }
-    .form-input--error { border-color: #dc3545; }
-    .preview { margin-top: 8px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem; color: #495057; display: flex; gap: 12px; }
-    .loading-sm { font-size: 0.85rem; color: #6c757d; }
-    .counter { font-size: 0.8rem; color: #6c757d; font-weight: 400; }
-    .participant-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; }
-    .field-error { width: 100%; font-size: 0.8rem; color: #dc3545; margin-top: 2px; }
-    .form-actions { margin-top: 24px; }
-    .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { background: #6c757d; cursor: not-allowed; }
-    .btn--secondary { background: #e9ecef; color: #495057; }
-    .btn--sm { padding: 4px 12px; font-size: 0.8rem; }
-    .btn--icon { background: #e9ecef; color: #495057; padding: 8px 12px; }
-    .btn--remove:disabled { opacity: 0.4; cursor: not-allowed; }
-    .loading { text-align: center; padding: 48px; color: #6c757d; }
-    .empty-quizzes { text-align: center; padding: 48px; }
-    .empty-quizzes p { color: #6c757d; margin-bottom: 16px; }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: #198754; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-    .toast--error { background: #dc3545; }
-    .toast__link { color: #fff; text-decoration: underline; margin-left: 8px; }
-  `],
+  styles: [],
 })
 export class GameCreateComponent {
   private readonly gameService = inject(GameService);

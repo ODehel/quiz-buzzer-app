@@ -40,7 +40,7 @@ describe('PaginatorComponent', () => {
     fixture.detectChanges();
 
     const btn = el.querySelector('[data-testid="paginator-page-2"]');
-    expect(btn!.classList.contains('paginator__btn--active')).toBe(true);
+    expect(btn!.classList.contains('active')).toBe(true);
   });
 
   it('disables prev button on first page', () => {

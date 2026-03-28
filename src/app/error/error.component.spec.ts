@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, provideRouter } from '@angular/router';
+import { Subject } from 'rxjs';
 
 import { ErrorComponent } from './error.component';
 
@@ -13,10 +14,20 @@ describe('ErrorComponent', () => {
       : null;
 
     TestBed.configureTestingModule({
+      imports: [ErrorComponent],
       providers: [
+        provideRouter([]),
         {
           provide: Router,
-          useValue: { getCurrentNavigation: () => currentNavigation },
+          useValue: {
+            getCurrentNavigation: () => currentNavigation,
+            events: new Subject(),
+            routerState: { root: {} },
+            createUrlTree: () => ({}),
+            serializeUrl: () => '',
+            navigate: () => Promise.resolve(true),
+            isActive: () => false,
+          },
         },
         {
           provide: ActivatedRoute,

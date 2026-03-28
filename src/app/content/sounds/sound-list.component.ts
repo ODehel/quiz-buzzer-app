@@ -22,137 +22,102 @@ import type { PagedResponse } from '../../core/models/api.models';
   standalone: true,
   imports: [FormsModule, PaginatorComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [],
   template: `
-    <div class="sound-list">
-      <header class="sound-list__header">
-        <h1>Jingles</h1>
-        <button class="btn btn--primary" (click)="onOpenUpload()" data-testid="btn-upload">
+    <div class="page-header">
+      <h1 class="page-title">Jingles</h1>
+      <div class="page-actions">
+        <button class="btn-primary" (click)="onOpenUpload()" data-testid="btn-upload">
+          <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           Uploader un jingle
         </button>
-      </header>
+      </div>
+    </div>
 
-      @if (isLoading()) {
-        <div class="loading" data-testid="loading">Chargement...</div>
-      } @else if (sounds().length === 0) {
-        <p class="empty" data-testid="empty-list">Aucun jingle — uploadez votre premier jingle</p>
-      } @else {
-        <table class="table" data-testid="sounds-table">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th>Date d'upload</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of sounds(); track s.id) {
-              <tr data-testid="sound-row">
-                <td>{{ s.name }}</td>
-                <td>{{ formatDate(s.created_at) }}</td>
-                <td class="actions">
-                  <button
-                    class="btn btn--sm btn--danger-icon"
-                    (click)="onDeleteClick(s)"
-                    title="Supprimer"
-                    data-testid="btn-delete"
-                  >Supprimer</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+    @if (isLoading()) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="loading">Chargement…</div>
+    } @else if (sounds().length === 0) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="empty-list">Aucun jingle — uploadez votre premier jingle</div>
+    } @else {
+      <div class="table-wrap" data-testid="sounds-table">
+        <div class="table-header" style="display:grid;grid-template-columns:1fr 150px 100px;padding:10px 16px">
+          <span>Nom</span>
+          <span>Date d'upload</span>
+          <span style="text-align:right">Actions</span>
+        </div>
+        @for (s of sounds(); track s.id) {
+          <div class="table-row" style="display:grid;grid-template-columns:1fr 150px 100px;align-items:center;padding:10px 16px" data-testid="sound-row">
+            <span>{{ s.name }}</span>
+            <span style="font-size:12px;color:var(--muted)">{{ formatDate(s.created_at) }}</span>
+            <div style="text-align:right">
+              <button class="btn-icon" style="color:var(--red)" (click)="onDeleteClick(s)" title="Supprimer" data-testid="btn-delete">
+                <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
 
-        @if (totalPages() > 1) {
+      @if (totalPages() > 1) {
+        <div style="margin-top:16px">
           <app-paginator
             [page]="currentPage()"
             [total]="totalPages()"
             (pageChange)="onPageChange($event)"
           />
-        }
+        </div>
       }
+    }
 
-      @if (dialogOpen()) {
-        <div class="overlay" (click)="onCloseDialog()" data-testid="upload-overlay">
-          <div class="dialog" (click)="$event.stopPropagation()" data-testid="upload-dialog">
-            <h2>Uploader un jingle</h2>
-
-            <label class="field">
-              <span class="field__label">Fichier audio</span>
+    <!-- Upload dialog -->
+    @if (dialogOpen()) {
+      <div class="modal-overlay" (click)="onCloseDialog()" data-testid="upload-overlay">
+        <div class="modal" (click)="$event.stopPropagation()" data-testid="upload-dialog">
+          <div class="modal-title">Uploader un jingle</div>
+          <div class="modal-body">
+            <div class="field" style="margin-bottom:14px">
+              <label class="field-label">Fichier audio</label>
               <input
                 type="file"
                 accept=".mp3,.wav,.ogg,audio/mpeg,audio/wav,audio/ogg"
                 (change)="onFileSelected($event)"
+                class="field-input"
                 data-testid="input-file"
               />
-            </label>
-
-            <label class="field">
-              <span class="field__label">Nom du jingle</span>
+            </div>
+            <div class="field">
+              <label class="field-label">Nom du jingle</label>
               <input
                 type="text"
+                class="field-input"
                 [ngModel]="uploadName()"
                 (ngModelChange)="uploadName.set($event)"
                 data-testid="input-name"
               />
-            </label>
-
-            @if (uploadError()) {
-              <p class="error-msg" data-testid="upload-error">{{ uploadError() }}</p>
-            }
-
-            <div class="dialog__actions">
-              <button class="btn btn--secondary" (click)="onCloseDialog()" data-testid="btn-cancel">
-                Annuler
-              </button>
-              <button
-                class="btn btn--primary"
-                [disabled]="!canUpload()"
-                (click)="onUpload()"
-                data-testid="btn-confirm-upload"
-              >
-                Uploader
-              </button>
             </div>
+            @if (uploadError()) {
+              <div class="field-error" style="margin-top:8px" data-testid="upload-error">{{ uploadError() }}</div>
+            }
+          </div>
+          <div class="modal-actions">
+            <button class="btn-modal-cancel" (click)="onCloseDialog()" data-testid="btn-cancel">Annuler</button>
+            <button
+              class="btn-primary"
+              [disabled]="!canUpload()"
+              (click)="onUpload()"
+              data-testid="btn-confirm-upload"
+            >Uploader</button>
           </div>
         </div>
-      }
+      </div>
+    }
 
-      @if (toastMessage()) {
-        <div class="toast" [class.toast--error]="toastIsError()" data-testid="toast">
-          {{ toastMessage() }}
-        </div>
-      }
+    @if (toastMessage()) {
+      <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">{{ toastMessage() }}</div>
+    }
 
-      <app-confirm-dialog />
-    </div>
+    <app-confirm-dialog />
   `,
-  styles: [`
-    .sound-list { padding: 24px; max-width: 900px; margin: 0 auto; }
-    .sound-list__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .sound-list__header h1 { margin: 0; font-size: 1.5rem; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #dee2e6; }
-    .table th { font-weight: 600; font-size: 0.85rem; color: #6c757d; }
-    .actions { text-align: right; }
-    .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { opacity: 0.5; cursor: default; }
-    .btn--secondary { background: #e9ecef; color: #495057; }
-    .btn--sm { padding: 4px 8px; font-size: 0.8rem; }
-    .btn--danger-icon { background: #f8d7da; color: #842029; }
-    .loading { text-align: center; padding: 48px; color: #6c757d; }
-    .empty { text-align: center; padding: 48px; color: #6c757d; }
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .dialog { background: #fff; border-radius: 8px; padding: 24px; max-width: 460px; width: 90%; }
-    .dialog h2 { margin: 0 0 16px; font-size: 1.1rem; }
-    .dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-    .field__label { font-size: 0.8rem; color: #6c757d; }
-    .field input[type="text"] { padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem; }
-    .error-msg { color: #dc3545; font-size: 0.85rem; margin: 4px 0 0; }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: #198754; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-    .toast--error { background: #dc3545; }
-  `],
 })
 export class SoundListComponent {
   private readonly soundService = inject(SoundService);
@@ -164,7 +129,6 @@ export class SoundListComponent {
   protected readonly totalPages = signal(1);
   protected readonly isLoading = signal(true);
 
-  // Upload dialog
   protected readonly dialogOpen = signal(false);
   protected readonly uploadName = signal('');
   protected readonly uploadError = signal<string | null>(null);
@@ -172,7 +136,6 @@ export class SoundListComponent {
 
   protected readonly canUpload = signal(false);
 
-  // Toast
   protected readonly toastMessage = signal<string | null>(null);
   protected readonly toastIsError = signal(false);
 
@@ -245,7 +208,6 @@ export class SoundListComponent {
       return;
     }
 
-    // Pre-fill name with filename without extension
     const nameWithoutExt = file.name.replace(/\.[^.]+$/, '');
     this.uploadName.set(nameWithoutExt);
     this.canUpload.set(true);

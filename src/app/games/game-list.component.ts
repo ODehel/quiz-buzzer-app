@@ -31,99 +31,66 @@ export interface GameRow extends Game {
     ConfirmDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [],
   template: `
-    <div class="game-list">
-      <header class="game-list__header">
-        <h1>Parties</h1>
-        <button
-          class="btn btn--primary"
-          (click)="onNewGameClick()"
-          data-testid="btn-new-game"
-        >
+    <div class="page-header">
+      <h1 class="page-title">Parties</h1>
+      <div class="page-actions">
+        <button class="btn-primary" (click)="onNewGameClick()" data-testid="btn-new-game">
+          <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           Nouvelle partie
         </button>
-      </header>
+      </div>
+    </div>
 
-      @if (isLoading()) {
-        <div class="loading" data-testid="loading">Chargement...</div>
-      } @else if (games().length === 0) {
-        <p class="empty" data-testid="empty-list">Aucune partie</p>
-      } @else {
-        <table class="table" data-testid="games-table">
-          <thead>
-            <tr>
-              <th>Quiz</th>
-              <th>Statut</th>
-              <th>Date de création</th>
-              <th>Participants</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (game of games(); track game.id) {
-              <tr data-testid="game-row">
-                <td data-testid="game-quiz-name">{{ game.quizName }}</td>
-                <td><app-status-badge [status]="game.status" /></td>
-                <td data-testid="game-date">{{ formatDate(game.created_at) }}</td>
-                <td data-testid="game-participants">{{ game.participants.length }}</td>
-                <td class="actions">
-                  <a
-                    class="btn btn--sm"
-                    [routerLink]="gameRoute(game)"
-                    data-testid="btn-view"
-                  >
-                    Voir
-                  </a>
-                  @if (game.status === 'PENDING') {
-                    <button
-                      class="btn btn--sm btn--danger"
-                      (click)="onDeleteClick(game)"
-                      data-testid="btn-delete"
-                    >
-                      Supprimer
-                    </button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+    @if (isLoading()) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="loading">Chargement…</div>
+    } @else if (games().length === 0) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="empty-list">Aucune partie</div>
+    } @else {
+      <div class="table-wrap" data-testid="games-table">
+        <div class="table-header" style="display:grid;grid-template-columns:1fr 120px 140px 100px 100px;padding:10px 16px">
+          <span>Quiz</span>
+          <span>Statut</span>
+          <span>Date de création</span>
+          <span>Participants</span>
+          <span style="text-align:right">Actions</span>
+        </div>
+        @for (game of games(); track game.id) {
+          <div class="table-row" style="display:grid;grid-template-columns:1fr 120px 140px 100px 100px;align-items:center;padding:10px 16px" data-testid="game-row">
+            <span style="font-weight:500" data-testid="game-quiz-name">{{ game.quizName }}</span>
+            <div><app-status-badge [status]="game.status" /></div>
+            <span style="font-size:12px;color:var(--muted)" data-testid="game-date">{{ formatDate(game.created_at) }}</span>
+            <span style="font-size:13px" data-testid="game-participants">{{ game.participants.length }}</span>
+            <div style="display:flex;gap:6px;justify-content:flex-end">
+              <a class="btn-ghost" style="padding:4px 10px;font-size:12px" [routerLink]="gameRoute(game)" data-testid="btn-view">Voir</a>
+              @if (game.status === 'PENDING') {
+                <button class="btn-icon" style="color:var(--red)" (click)="onDeleteClick(game)" data-testid="btn-delete">
+                  <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
 
-        @if (totalPages() > 1) {
+      @if (totalPages() > 1) {
+        <div style="margin-top:16px">
           <app-paginator
             [page]="currentPage()"
             [total]="totalPages()"
             (pageChange)="onPageChange($event)"
           />
-        }
-      }
-
-      @if (toastMessage()) {
-        <div class="toast" [class.toast--error]="toastIsError()" data-testid="toast">
-          {{ toastMessage() }}
         </div>
       }
+    }
 
-      <app-confirm-dialog />
-    </div>
+    @if (toastMessage()) {
+      <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">{{ toastMessage() }}</div>
+    }
+
+    <app-confirm-dialog />
   `,
-  styles: [`
-    .game-list { padding: 24px; max-width: 1200px; margin: 0 auto; }
-    .game-list__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .game-list__header h1 { margin: 0; font-size: 1.5rem; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #dee2e6; }
-    .table th { font-weight: 600; font-size: 0.85rem; color: #6c757d; }
-    .actions { display: flex; gap: 4px; }
-    .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--sm { padding: 4px 12px; font-size: 0.8rem; background: #e9ecef; color: #495057; }
-    .btn--danger { background: #f8d7da; color: #842029; }
-    .loading { text-align: center; padding: 48px; color: #6c757d; }
-    .empty { text-align: center; padding: 48px; color: #6c757d; }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: #198754; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-    .toast--error { background: #dc3545; }
-  `],
 })
 export class GameListComponent {
   private readonly gameService = inject(GameService);
@@ -164,7 +131,6 @@ export class GameListComponent {
         this.applyGamesResponse(response);
       });
 
-    // Initial load: games + quizzes in parallel
     forkJoin({
       games: this.gameService.getAll({ page: 1, limit: 20 }),
       quizzes: this.quizService.getAll({ page: 1, limit: 100 }),
