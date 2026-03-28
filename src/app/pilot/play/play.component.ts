@@ -3,12 +3,13 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   effect,
   Injector,
   ViewChild,
   DestroyRef,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { GameStateService } from '../../core/services/game-state.service';
@@ -24,6 +25,7 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
   selector: 'app-play',
   standalone: true,
   imports: [
+    RouterLink,
     PlayerListComponent,
     McqControlComponent,
     SpeedControlComponent,
@@ -33,10 +35,18 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="play" data-testid="play">
-      <!-- Error banner -->
+      <!-- CA-24: Error banner for IN_ERROR -->
       @if (gs.status() === 'IN_ERROR') {
         <div class="play__error-banner" data-testid="error-banner">
-          Une erreur est survenue. Vous pouvez consulter les résultats partiels.
+          <span>La partie est en erreur serveur — le jeu a été interrompu</span>
+          <!-- CA-25: Partial results button -->
+          <a
+            class="play__error-btn"
+            [routerLink]="['/games', gs.state().gameId, 'results']"
+            data-testid="btn-partial-results"
+          >
+            Voir les résultats partiels
+          </a>
         </div>
       }
 
@@ -48,43 +58,48 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
 
         <!-- Center: Main control area -->
         <main class="play__main" data-testid="main-area">
-          @if (gs.status() === 'OPEN') {
-            <div class="play__trigger" data-testid="trigger-phase">
-              <button
-                class="btn btn--primary btn--lg"
-                [disabled]="isWaitingTrigger()"
-                (click)="onTriggerTitle()"
-                data-testid="btn-trigger-title"
-              >
-                Déclencher la question
-              </button>
-            </div>
-          }
+          <!-- CA-26: No piloting actions when IN_ERROR -->
+          @if (gs.status() !== 'IN_ERROR') {
+            @if (gs.status() === 'OPEN') {
+              <div class="play__trigger" data-testid="trigger-phase">
+                <button
+                  class="btn btn--primary btn--lg"
+                  [disabled]="isWaitingTrigger()"
+                  (click)="onTriggerTitle()"
+                  data-testid="btn-trigger-title"
+                >
+                  Déclencher la question
+                </button>
+              </div>
+            }
 
-          @if (gs.status() === 'QUESTION_TITLE' || gs.status() === 'QUESTION_OPEN'
-               || gs.status() === 'QUESTION_CLOSED' || gs.status() === 'QUESTION_BUZZED') {
-            @if (gs.state().questionType === 'MCQ') {
-              <app-mcq-control
-                #mcqControl
-                (triggerChoices)="ws.send({ type: 'trigger_choices' })"
-                (triggerCorrection)="ws.send({ type: 'trigger_correction' })"
-                (triggerNext)="ws.send({ type: 'trigger_next_question' })" />
-            } @else {
-              <app-speed-control
-                #speedControl
-                (validateAnswer)="ws.send({ type: 'validate_answer' })"
-                (invalidateAnswer)="ws.send({ type: 'invalidate_answer' })"
-                (triggerNext)="ws.send({ type: 'trigger_next_question' })" />
+            @if (gs.status() === 'QUESTION_TITLE' || gs.status() === 'QUESTION_OPEN'
+                 || gs.status() === 'QUESTION_CLOSED' || gs.status() === 'QUESTION_BUZZED') {
+              @if (gs.state().questionType === 'MCQ') {
+                <app-mcq-control
+                  #mcqControl
+                  (triggerChoices)="ws.send({ type: 'trigger_choices' })"
+                  (triggerCorrection)="ws.send({ type: 'trigger_correction' })"
+                  (triggerNext)="ws.send({ type: 'trigger_next_question' })" />
+              } @else {
+                <app-speed-control
+                  #speedControl
+                  (validateAnswer)="ws.send({ type: 'validate_answer' })"
+                  (invalidateAnswer)="ws.send({ type: 'invalidate_answer' })"
+                  (triggerNext)="ws.send({ type: 'trigger_next_question' })" />
+              }
             }
           }
         </main>
 
         <!-- Right column: Sound panel -->
         <aside class="play__sidebar play__sidebar--right" data-testid="sidebar-right">
-          <app-sound-panel
-            (triggerSystemSound)="ws.send($event)"
-            (playSound)="ws.send($event)"
-            (triggerRanking)="ws.send({ type: 'trigger_intermediate_ranking' })" />
+          @if (gs.status() !== 'IN_ERROR') {
+            <app-sound-panel
+              (triggerSystemSound)="ws.send($event)"
+              (playSound)="ws.send($event)"
+              (triggerRanking)="ws.send({ type: 'trigger_intermediate_ranking' })" />
+          }
         </aside>
       </div>
 
@@ -102,7 +117,9 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
   `,
   styles: [`
     .play { height: 100%; display: flex; flex-direction: column; }
-    .play__error-banner { background: #dc3545; color: #fff; padding: 12px 24px; text-align: center; font-weight: 600; }
+    .play__error-banner { background: #dc3545; color: #fff; padding: 12px 24px; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .play__error-btn { background: #fff; color: #dc3545; padding: 6px 16px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+    .play__error-btn:hover { background: #f8d7da; }
     .play__layout { display: grid; grid-template-columns: 250px 1fr 280px; gap: 0; flex: 1; overflow: hidden; }
     .play__sidebar { border-right: 1px solid #dee2e6; overflow-y: auto; }
     .play__sidebar--right { border-right: none; border-left: 1px solid #dee2e6; }
@@ -114,6 +131,7 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
     .btn--lg { padding: 16px 48px; font-size: 1.2rem; }
     .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; color: #fff; }
     .toast--error { background: #dc3545; }
+    .toast--info { background: #0d6efd; }
   `],
 })
 export class PlayComponent {
@@ -129,7 +147,13 @@ export class PlayComponent {
   protected readonly toastMessage = signal<string | null>(null);
 
   constructor() {
-    // CA-6: Navigate to results on COMPLETED
+    // CA-29: Show toast from noActiveGameGuard redirect
+    const navToast = this.router.getCurrentNavigation()?.extras.state?.['toast'];
+    if (navToast) {
+      this.showToast(navToast);
+    }
+
+    // CA-18: Navigate to results on COMPLETED
     effect(
       () => {
         if (this.gs.status() === 'COMPLETED') {

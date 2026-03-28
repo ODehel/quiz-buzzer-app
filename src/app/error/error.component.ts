@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-error',
@@ -7,7 +7,7 @@ import { ActivatedRoute } from '@angular/router';
   template: `
     <div class="error-container">
       <h1>Erreur</h1>
-      <p>{{ message }}</p>
+      <p>{{ message() }}</p>
     </div>
   `,
   styles: [
@@ -28,12 +28,12 @@ import { ActivatedRoute } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ErrorComponent {
+  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  readonly message: string;
 
-  constructor() {
-    this.message =
-      this.route.snapshot.queryParamMap.get('message') ??
-      'Une erreur inattendue est survenue.';
-  }
+  readonly message = signal<string>(
+    this.router.getCurrentNavigation()?.extras.state?.['message']
+      ?? this.route.snapshot.queryParamMap.get('message')
+      ?? "Une erreur inattendue s'est produite."
+  );
 }
