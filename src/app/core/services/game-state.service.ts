@@ -102,6 +102,10 @@ export class GameStateService {
     }));
   }
 
+  reset(): void {
+    this._state.set(INITIAL_STATE);
+  }
+
   dispatch(msg: InboundMessage): void {
     if (msg.type === 'game_state_sync') {
       this.handleGameStateSync(msg as GameStateSyncMessage);
