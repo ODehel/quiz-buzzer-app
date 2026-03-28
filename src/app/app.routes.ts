@@ -29,8 +29,22 @@ export const routes: Routes = [
       {
         path: 'questions',
         loadComponent: () =>
-          import('./content/content-shell.component').then(
-            (m) => m.ContentShellComponent
+          import('./content/questions/question-list.component').then(
+            (m) => m.QuestionListComponent
+          ),
+      },
+      {
+        path: 'questions/new',
+        loadComponent: () =>
+          import('./content/questions/question-form.component').then(
+            (m) => m.QuestionFormComponent
+          ),
+      },
+      {
+        path: 'questions/:id',
+        loadComponent: () =>
+          import('./content/questions/question-form.component').then(
+            (m) => m.QuestionFormComponent
           ),
       },
     ],
