@@ -1,18 +1,6 @@
-import { Injectable, inject, NgZone } from '@angular/core';
+import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  Observable,
-  Subject,
-  timer,
-  EMPTY,
-  shareReplay,
-  catchError,
-  switchMap,
-  tap,
-  retryWhen,
-  scan,
-  delayWhen,
-} from 'rxjs';
+import { Observable, Subject, shareReplay } from 'rxjs';
 
 import { AuthService } from './auth.service';
 import type { InboundMessage, OutboundMessage } from '../models/websocket.models';
@@ -28,11 +16,13 @@ export class WebSocketService {
   private readonly zone = inject(NgZone);
   private socket: WebSocket | null = null;
   private readonly _messages$ = new Subject<InboundMessage>();
-  private readonly _outbound$ = new Subject<OutboundMessage>();
 
   readonly messages$: Observable<InboundMessage> = this._messages$.pipe(
     shareReplay({ bufferSize: 1, refCount: true })
   );
+
+  readonly isConnected = signal(false);
+  readonly isReconnecting = signal(false);
 
   connect(): void {
     this.zone.runOutsideAngular(() => {
@@ -84,6 +74,10 @@ export class WebSocketService {
       this.handleTokenExpired();
       return;
     }
+    if (msg.type === 'auth_success') {
+      this.isConnected.set(true);
+      this.isReconnecting.set(false);
+    }
     this._messages$.next(msg);
   }
 
@@ -122,6 +116,7 @@ export class WebSocketService {
 
   private handleClose(event: CloseEvent, attempt: number): void {
     this.socket = null;
+    this.isConnected.set(false);
 
     if (event.code === NON_RETRYABLE_CLOSE_CODE) {
       this.router.navigate(['/error'], {
@@ -131,6 +126,7 @@ export class WebSocketService {
     }
 
     if (event.code === 4002) {
+      this.isReconnecting.set(true);
       this.auth
         .refresh()
         .then(() => {
@@ -143,6 +139,7 @@ export class WebSocketService {
       return;
     }
 
+    this.isReconnecting.set(true);
     const delay = Math.min(1000 * Math.pow(2, attempt), MAX_BACKOFF_MS);
     setTimeout(() => this.establishConnection(attempt + 1), delay);
   }
