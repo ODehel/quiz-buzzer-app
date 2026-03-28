@@ -54,6 +54,13 @@ export const routes: Routes = [
             (m) => m.QuestionFormComponent
           ),
       },
+      {
+        path: 'sounds',
+        loadComponent: () =>
+          import('./content/sounds/sound-list.component').then(
+            (m) => m.SoundListComponent
+          ),
+      },
     ],
   },
   {
