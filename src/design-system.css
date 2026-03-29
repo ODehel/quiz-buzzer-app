@@ -980,6 +980,56 @@ code, pre {
 .media-icon.inactive { opacity: .2; }
 .media-icon svg { width: 12px; height: 12px; fill: var(--accent); }
 
+/* Cellules tableau — titre, thème, méta, actions */
+.q-title {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.q-theme {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.q-meta { font-size: 12px; color: var(--muted); }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* ── Barre de filtres ── */
+.filters-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.filters-bar .filter-select { min-width: 140px; width: auto; }
+.filters-bar .filter-input  { width: 68px; text-align: center; }
+.filter-range { display: flex; align-items: center; gap: 6px; }
+.filter-range-sep { font-size: 12px; color: var(--muted); }
+.filter-total {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  align-self: center;
+}
+.filter-total strong { color: var(--text); }
+
 
 /* ══════════════════════════════════════════════════════════════════
    12. COMPOSANTS — PAGINATEUR (PaginatorComponent)
