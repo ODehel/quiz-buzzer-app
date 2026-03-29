@@ -910,6 +910,56 @@ code, pre {
 .card-action-btn svg { width: 13px; height: 13px; fill: currentColor; }
 .card-action-btn.danger:hover { background: #1a0808; color: var(--red); }
 
+/* Stats questions (card quiz) */
+.card-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+.stat-total {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+}
+.stat-total-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.stat-divider { width: 1px; height: 30px; background: var(--border); }
+.stat-types { display: flex; flex-direction: column; gap: 3px; }
+.stat-type-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.stat-type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-mcq  { background: #7eb3ff; }
+.dot-speed { background: #c084fc; }
+.stat-type-label { color: var(--muted); }
+.stat-type-count { font-weight: 600; color: var(--text); margin-left: auto; padding-left: 8px; }
+
+/* Distribution par niveau (card quiz) */
+.level-bars { display: flex; flex-direction: column; gap: 4px; }
+.level-bar-row { display: flex; align-items: center; gap: 7px; }
+.level-bar-label { font-size: 10px; color: var(--muted); width: 12px; text-align: right; flex-shrink: 0; }
+.level-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.level-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .3s;
+}
+.bar-1 { background: #4ade80; }
+.bar-2 { background: #a3e635; }
+.bar-3 { background: #facc15; }
+.bar-4 { background: #fb923c; }
+.bar-5 { background: #f87171; }
+.level-bar-count { font-size: 10px; color: var(--muted); width: 18px; text-align: right; flex-shrink: 0; }
+
+/* États vides / chargement */
+.empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 14px; }
+
 /* Panel (compositeur) */
 .panel {
   background: var(--surface);
