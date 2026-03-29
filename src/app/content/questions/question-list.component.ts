@@ -205,7 +205,17 @@ import type { PagedResponse } from '../../core/models/api.models';
 
     <app-confirm-dialog />
   `,
-  styles: [],
+  styles: [`
+    :host { display: block; }
+
+    .table-header,
+    .table-row {
+      display: grid;
+      grid-template-columns: 1fr 140px 72px 90px 80px 70px 60px 72px;
+      gap: 8px;
+      align-items: center;
+    }
+  `],
 })
 export class QuestionListComponent {
   private readonly questionService = inject(QuestionService);
