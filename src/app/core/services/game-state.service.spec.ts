@@ -430,6 +430,37 @@ describe('GameStateService', () => {
       httpMock.expectNone(`${environment.serverUrl}/api/v1/games`);
     });
 
+    it('auth_success with role buzzer adds buzzer to connectedBuzzers', () => {
+      service.dispatch({
+        type: 'auth_success',
+        role: 'buzzer',
+        username: 'quiz_buzzer_01',
+        expires_in: 3600,
+      } as AuthSuccessMessage);
+
+      expect(service.connectedBuzzers()).toEqual(['quiz_buzzer_01']);
+    });
+
+    it('auth_success with role admin does not add to connectedBuzzers', async () => {
+      jest.useFakeTimers();
+      service.dispatch({
+        type: 'auth_success',
+        role: 'admin',
+        username: 'admin',
+        expires_in: 3600,
+      } as AuthSuccessMessage);
+
+      expect(service.connectedBuzzers()).toEqual([]);
+      // Should start sync timeout instead (admin behavior)
+      jest.advanceTimersByTime(2000);
+      jest.useRealTimers();
+
+      await Promise.resolve();
+
+      const req = httpMock.expectOne(`${environment.serverUrl}/api/v1/games`);
+      req.flush({ data: [], page: 1, limit: 20, total: 0, total_pages: 0 });
+    });
+
     it('preserves questionResults across reconnection', () => {
       // First, add a question result
       const resultMsg: QuestionResultSummaryMessage = {

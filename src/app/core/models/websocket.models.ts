@@ -60,6 +60,8 @@ export type InboundMessage =
 
 export interface AuthSuccessMessage {
   type: 'auth_success';
+  role?: 'admin' | 'buzzer';
+  username?: string;
   expires_in: number;
 }
 
