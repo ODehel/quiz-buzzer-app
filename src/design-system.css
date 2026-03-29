@@ -936,7 +936,8 @@ code, pre {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px; border-bottom: 1px solid var(--border);
 }
-.widget-action { font-size: 12px; color: var(--accent); cursor: pointer; }
+.widget-title { font-size: 13px; }
+.widget-action { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: none; }
 .widget-action:hover { text-decoration: underline; }
 
 
@@ -1125,6 +1126,79 @@ code, pre {
   border-radius: 50%;
   background: var(--green);
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Grille métriques (4 colonnes) */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* Grille contenu principal (parties + buzzers) */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+}
+
+/* Tableau dernières parties */
+.games-table { width: 100%; }
+.games-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 90px 70px;
+  align-items: center;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.games-row:last-child { border-bottom: none; }
+.games-row:hover { background: var(--surface2); }
+.game-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-date { font-size: 12px; color: var(--muted); }
+.game-action {
+  text-align: right;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Liste buzzers connectés */
+.buzzers-list { padding: 8px 0; }
+.buzzer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+}
+.buzzer-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1.5px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.buzzer-name { font-size: 13px; font-weight: 500; }
+.buzzer-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-left: auto;
+  box-shadow: 0 0 5px var(--green);
 }
 
 
