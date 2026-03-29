@@ -958,6 +958,19 @@ code, pre {
 .table-row:last-child { border-bottom: none; }
 .table-row:hover { background: var(--surface2); }
 
+/* Icônes média (image / audio) */
+.media-icons { display: flex; gap: 5px; }
+.media-icon {
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.media-icon.active { background: var(--accent-dim); }
+.media-icon.inactive { opacity: .2; }
+.media-icon svg { width: 12px; height: 12px; fill: var(--accent); }
+
 
 /* ══════════════════════════════════════════════════════════════════
    12. COMPOSANTS — PAGINATEUR (PaginatorComponent)
