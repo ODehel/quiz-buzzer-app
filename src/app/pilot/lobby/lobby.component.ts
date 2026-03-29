@@ -224,11 +224,16 @@ export class LobbyComponent {
         });
     }
 
+    // Poll for buzzer updates while in lobby
+    this.gs.startPolling(3_000);
+    inject(DestroyRef).onDestroy(() => this.gs.stopPolling());
+
     // CA-17/CA-24: navigate to /pilot/play when status transitions to OPEN or QUESTION_*
     effect(
       () => {
         const s = this.gs.status();
         if (s === 'OPEN' || s?.startsWith('QUESTION_')) {
+          this.gs.stopPolling();
           this.router.navigate(['/pilot/play']);
         }
       },

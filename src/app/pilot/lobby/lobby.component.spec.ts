@@ -81,6 +81,8 @@ describe('LobbyComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
     jest.spyOn(router, 'navigate').mockResolvedValue(true);
+    jest.spyOn(gs, 'startPolling').mockImplementation(() => {});
+    jest.spyOn(gs, 'stopPolling').mockImplementation(() => {});
   });
 
   afterEach(() => {

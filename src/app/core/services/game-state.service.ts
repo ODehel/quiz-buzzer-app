@@ -110,6 +110,7 @@ export class GameStateService {
   private readonly router = inject(Router);
   private readonly _state = signal<GameState>(INITIAL_STATE);
   private syncTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 
   readonly state = this._state.asReadonly();
   readonly status = computed(() => this._state().status);
@@ -196,6 +197,27 @@ export class GameStateService {
     if (this.syncTimeoutId !== null) {
       clearTimeout(this.syncTimeoutId);
       this.syncTimeoutId = null;
+    }
+  }
+
+  /** Request a fresh game_state_sync from the server */
+  requestSync(): void {
+    this.ws.send({ type: 'request_game_state' });
+  }
+
+  /** Start periodic polling for game state (buzzer updates) */
+  startPolling(intervalMs = 3_000): void {
+    this.stopPolling();
+    this.pollingIntervalId = setInterval(() => {
+      this.requestSync();
+    }, intervalMs);
+  }
+
+  /** Stop periodic polling */
+  stopPolling(): void {
+    if (this.pollingIntervalId !== null) {
+      clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = null;
     }
   }
 

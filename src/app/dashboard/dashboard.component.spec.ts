@@ -49,6 +49,8 @@ function createMockGameStateService(overrides: Partial<GameState> = {}) {
     isActive: isActiveSig,
     isPiloting: isPilotingSig,
     connectedBuzzers: connectedBuzzersSig,
+    startPolling: jest.fn(),
+    stopPolling: jest.fn(),
     _state,
   };
 }

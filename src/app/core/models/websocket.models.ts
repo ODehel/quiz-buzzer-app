@@ -22,7 +22,8 @@ export type OutboundMessage =
   | { type: 'invalidate_answer' }
   | { type: 'trigger_intermediate_ranking' }
   | { type: 'trigger_system_sound'; sound_id: SystemSoundId; targets?: string[] }
-  | { type: 'play_sound'; sound_id: string; targets?: string[] };
+  | { type: 'play_sound'; sound_id: string; targets?: string[] }
+  | { type: 'request_game_state' };
 
 export type SystemSoundId =
   | 'BUZZ_PRESSED'
