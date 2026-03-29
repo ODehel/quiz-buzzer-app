@@ -998,6 +998,68 @@ describe('GameStateService', () => {
     });
   });
 
+  describe('polling', () => {
+    let wsMock: { messages$: any; send: jest.Mock };
+
+    beforeEach(() => {
+      wsMock = TestBed.inject(WebSocketService) as any;
+    });
+
+    afterEach(() => {
+      service.stopPolling();
+    });
+
+    it('requestSync sends request_game_state message', () => {
+      service.requestSync();
+      expect(wsMock.send).toHaveBeenCalledWith({ type: 'request_game_state' });
+    });
+
+    it('startPolling sends request_game_state at the given interval', () => {
+      jest.useFakeTimers();
+      service.startPolling(1_000);
+
+      expect(wsMock.send).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(1);
+      expect(wsMock.send).toHaveBeenCalledWith({ type: 'request_game_state' });
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(2);
+
+      jest.useRealTimers();
+    });
+
+    it('stopPolling clears the interval', () => {
+      jest.useFakeTimers();
+      service.startPolling(1_000);
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(1);
+
+      service.stopPolling();
+
+      jest.advanceTimersByTime(3_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(1);
+
+      jest.useRealTimers();
+    });
+
+    it('startPolling replaces a previous polling interval', () => {
+      jest.useFakeTimers();
+      service.startPolling(1_000);
+      service.startPolling(2_000);
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(1);
+
+      jest.useRealTimers();
+    });
+  });
+
   describe('unknown message types', () => {
     it('does not throw on unknown message type', () => {
       expect(() => {

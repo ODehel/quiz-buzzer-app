@@ -4,6 +4,7 @@ import {
   inject,
   signal,
   computed,
+  DestroyRef,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -174,6 +175,10 @@ export class DashboardComponent {
 
   constructor() {
     this.loadDashboardData();
+
+    // Poll for buzzer updates on the dashboard
+    this.gs.startPolling(5_000);
+    inject(DestroyRef).onDestroy(() => this.gs.stopPolling());
   }
 
   private loadDashboardData(): void {
