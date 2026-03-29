@@ -51,6 +51,8 @@ export type InboundMessage =
   | AllAnsweredMessage
   | BuzzLockedMessage
   | BuzzUnlockedMessage
+  | BuzzerConnectedMessage
+  | BuzzerDisconnectedMessage
   | QuestionResultSummaryMessage
   | IntermediateRankingMessage
   | ErrorMessage
@@ -140,6 +142,16 @@ export interface BuzzUnlockedMessage {
   type: 'buzz_unlocked';
   remaining_seconds: number;
   invalidated_participant: string;
+}
+
+export interface BuzzerConnectedMessage {
+  type: 'buzzer_connected';
+  username: string;
+}
+
+export interface BuzzerDisconnectedMessage {
+  type: 'buzzer_disconnected';
+  username: string;
 }
 
 export interface McqPlayerResult {

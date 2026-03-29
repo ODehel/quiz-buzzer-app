@@ -20,6 +20,8 @@ import type {
   PlayerAnsweredMessage,
   BuzzLockedMessage,
   BuzzUnlockedMessage,
+  BuzzerConnectedMessage,
+  BuzzerDisconnectedMessage,
   QuestionResultSummaryMessage,
   IntermediateRankingMessage,
   McqPlayerResult,
@@ -232,6 +234,12 @@ export class GameStateService {
       case 'buzz_unlocked':
         this.handleBuzzUnlocked(msg as BuzzUnlockedMessage);
         break;
+      case 'buzzer_connected':
+        this.handleBuzzerConnected(msg as BuzzerConnectedMessage);
+        break;
+      case 'buzzer_disconnected':
+        this.handleBuzzerDisconnected(msg as BuzzerDisconnectedMessage);
+        break;
       case 'question_result_summary':
         this.handleQuestionResultSummary(msg as QuestionResultSummaryMessage);
         break;
@@ -353,6 +361,22 @@ export class GameStateService {
 
   private handleAllAnswered(): void {
     this._state.update((s) => ({ ...s, allAnswered: true }));
+  }
+
+  private handleBuzzerConnected(msg: BuzzerConnectedMessage): void {
+    this._state.update((s) => ({
+      ...s,
+      connectedBuzzers: s.connectedBuzzers.includes(msg.username)
+        ? s.connectedBuzzers
+        : [...s.connectedBuzzers, msg.username],
+    }));
+  }
+
+  private handleBuzzerDisconnected(msg: BuzzerDisconnectedMessage): void {
+    this._state.update((s) => ({
+      ...s,
+      connectedBuzzers: s.connectedBuzzers.filter((b) => b !== msg.username),
+    }));
   }
 
   private handleBuzzLocked(msg: BuzzLockedMessage): void {
