@@ -80,8 +80,8 @@ describe('ThemeListComponent', () => {
     setup([]);
     const emptyMsg = el.querySelector('[data-testid="empty-list"]');
     expect(emptyMsg).toBeTruthy();
-    expect(emptyMsg!.textContent).toContain('Aucun theme');
-    expect(emptyMsg!.textContent).toContain('creez votre premier theme');
+    expect(emptyMsg!.textContent).toContain('Aucun thème');
+    expect(emptyMsg!.textContent).toContain('créez votre premier thème');
   });
 
   // --- Creation (CA-5, CA-6, CA-7, CA-8, CA-9, CA-10) ---
@@ -168,7 +168,7 @@ describe('ThemeListComponent', () => {
 
     expect(mockThemeService.create).toHaveBeenCalledWith('Musique');
     expect((component as any).isCreating()).toBe(false);
-    expect(el.querySelector('[data-testid="toast"]')!.textContent).toContain('Theme cree');
+    expect(el.querySelector('[data-testid="toast"]')!.textContent).toContain('Thème créé');
   });
 
   it('CA-8: on 409 THEME_ALREADY_EXISTS, shows inline error', async () => {
@@ -189,7 +189,7 @@ describe('ThemeListComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(el.querySelector('[data-testid="create-error"]')!.textContent).toContain('porte deja ce nom');
+    expect(el.querySelector('[data-testid="create-error"]')!.textContent).toContain('porte déjà ce nom');
     expect((component as any).isCreating()).toBe(true);
   });
 
@@ -300,7 +300,7 @@ describe('ThemeListComponent', () => {
 
     expect(mockThemeService.update).toHaveBeenCalledWith('t1', 'Culture generale');
     expect((component as any).themes()[0].name).toBe('Culture generale');
-    expect(el.querySelector('[data-testid="toast"]')!.textContent).toContain('Theme renomme');
+    expect(el.querySelector('[data-testid="toast"]')!.textContent).toContain('Thème renommé');
   });
 
   it('CA-15: on 409 in edit mode, shows inline error and stays in edit', async () => {
@@ -321,7 +321,7 @@ describe('ThemeListComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(el.querySelector('[data-testid="edit-error"]')!.textContent).toContain('porte deja ce nom');
+    expect(el.querySelector('[data-testid="edit-error"]')!.textContent).toContain('porte déjà ce nom');
     expect((component as any).editingId()).toBe('t1');
   });
 
@@ -350,7 +350,7 @@ describe('ThemeListComponent', () => {
     tick();
 
     expect(el.querySelector('[data-testid="confirm-dialog"]')).toBeTruthy();
-    expect(el.querySelector('.dialog__message')!.textContent).toContain('Culture');
+    expect(el.querySelector('.modal-body')!.textContent).toContain('Culture');
   }));
 
   it('CA-18: after confirmation, removes row locally and shows toast', async () => {
@@ -368,7 +368,7 @@ describe('ThemeListComponent', () => {
     expect(mockThemeService.delete).toHaveBeenCalledWith('t1');
     expect((component as any).themes().length).toBe(1);
     expect((component as any).total()).toBe(1);
-    expect(el.querySelector('[data-testid="toast"]')!.textContent).toContain('Theme supprime');
+    expect(el.querySelector('[data-testid="toast"]')!.textContent).toContain('Thème supprimé');
   });
 
   it('CA-19: on 409 THEME_HAS_QUESTIONS, shows error toast', async () => {
@@ -392,7 +392,7 @@ describe('ThemeListComponent', () => {
     const toast = el.querySelector('[data-testid="toast"]');
     expect(toast).toBeTruthy();
     expect(toast!.textContent).toContain('contient des questions');
-    expect(toast!.classList.contains('toast--error')).toBe(true);
+    expect(toast!.classList.contains('toast-error')).toBe(true);
     // La liste n'a pas change
     expect((component as any).themes().length).toBe(2);
   });

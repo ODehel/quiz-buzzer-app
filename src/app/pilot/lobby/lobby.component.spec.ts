@@ -164,16 +164,16 @@ describe('LobbyComponent', () => {
     createComponent(['buzzer-1']);
 
     const bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
-    expect(bar.classList.contains('readiness--waiting')).toBe(true);
-    expect(bar.classList.contains('readiness--ready')).toBe(false);
+    expect(bar.classList.contains('insufficient')).toBe(true);
+    expect(bar.classList.contains('ready')).toBe(false);
   });
 
   it('CA-6 — readiness bar is green when buzzers >= participants', () => {
     createComponent(['b1', 'b2', 'b3']);
 
     const bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
-    expect(bar.classList.contains('readiness--ready')).toBe(true);
-    expect(bar.classList.contains('readiness--waiting')).toBe(false);
+    expect(bar.classList.contains('ready')).toBe(true);
+    expect(bar.classList.contains('insufficient')).toBe(false);
   });
 
   // ── CA-7: Readiness label ──
@@ -181,7 +181,7 @@ describe('LobbyComponent', () => {
     createComponent(['buzzer-1']);
 
     const label = fixture.nativeElement.querySelector('[data-testid="readiness-label"]');
-    expect(label.textContent).toContain('1 buzzers connectés sur 3 attendus');
+    expect(label.textContent).toContain('1 / 3 buzzers connectes');
   });
 
   // ── CA-8: Real-time update (simulated via signal change) ──
@@ -189,7 +189,7 @@ describe('LobbyComponent', () => {
     createComponent([]);
 
     let bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
-    expect(bar.classList.contains('readiness--waiting')).toBe(true);
+    expect(bar.classList.contains('insufficient')).toBe(true);
 
     // Simulate buzzer connections via WebSocket
     messagesSubject.next(
@@ -198,7 +198,7 @@ describe('LobbyComponent', () => {
     fixture.detectChanges();
 
     bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
-    expect(bar.classList.contains('readiness--ready')).toBe(true);
+    expect(bar.classList.contains('ready')).toBe(true);
   });
 
   // ── CA-9: Participants with buzzer association ──
@@ -220,10 +220,10 @@ describe('LobbyComponent', () => {
 
     const statuses = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-status"]');
     expect(statuses[0].textContent.trim()).toBe('buzzer-1');
-    expect(statuses[1].textContent.trim()).toBe('Non connecté');
-    expect(statuses[2].textContent.trim()).toBe('Non connecté');
+    expect(statuses[1].textContent.trim()).toBe('Non connecte');
+    expect(statuses[2].textContent.trim()).toBe('Non connecte');
 
-    expect(statuses[1].classList.contains('panel__buzzer--disconnected')).toBe(true);
+    expect(statuses[1].classList.contains('offline')).toBe(true);
   });
 
   // ── CA-11: Buzzer list with usernames ──
@@ -243,8 +243,10 @@ describe('LobbyComponent', () => {
     const slots = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-slot"]');
     expect(slots.length).toBe(10);
 
-    expect(slots[0].classList.contains('panel__item--inactive')).toBe(false);
-    expect(slots[1].classList.contains('panel__item--inactive')).toBe(true);
+    const avatar0 = slots[0].querySelector('.buzzer-avatar');
+    const avatar1 = slots[1].querySelector('.buzzer-avatar');
+    expect(avatar0.classList.contains('online')).toBe(true);
+    expect(avatar1.classList.contains('offline')).toBe(true);
   });
 
   // ── CA-13: Buzzer list updates in real-time ──
@@ -252,7 +254,8 @@ describe('LobbyComponent', () => {
     createComponent([]);
 
     let slots = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-slot"]');
-    expect(slots[0].classList.contains('panel__item--inactive')).toBe(true);
+    let avatar0 = slots[0].querySelector('.buzzer-avatar');
+    expect(avatar0.classList.contains('offline')).toBe(true);
 
     messagesSubject.next(
       buildGameStateSync({ connected_buzzers: ['new-buzzer'] })
@@ -262,7 +265,8 @@ describe('LobbyComponent', () => {
     slots = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-slot"]');
     const usernames = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-username"]');
     expect(usernames[0].textContent.trim()).toBe('new-buzzer');
-    expect(slots[0].classList.contains('panel__item--inactive')).toBe(false);
+    avatar0 = slots[0].querySelector('.buzzer-avatar');
+    expect(avatar0.classList.contains('online')).toBe(true);
   });
 
   // ── CA-14: Start button always visible and clickable ──
@@ -419,7 +423,7 @@ describe('LobbyComponent', () => {
 
     // Buzzers updated
     const label = fixture.nativeElement.querySelector('[data-testid="readiness-label"]');
-    expect(label.textContent).toContain('2 buzzers connectés sur 3 attendus');
+    expect(label.textContent).toContain('2 / 3 buzzers connectes');
   });
 
   // ── CA-24: game_state_sync with OPEN triggers navigation ──

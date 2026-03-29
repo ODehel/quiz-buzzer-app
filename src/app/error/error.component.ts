@@ -1,31 +1,22 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-error',
   standalone: true,
+  imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [],
   template: `
-    <div class="error-container">
-      <h1>Erreur</h1>
-      <p>{{ message() }}</p>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:24px">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--red-dim);display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+        <svg style="width:32px;height:32px;fill:var(--red)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      </div>
+      <h1 class="page-title" style="color:var(--red);margin-bottom:8px">Erreur</h1>
+      <p style="color:var(--muted);font-size:14px;max-width:400px">{{ message() }}</p>
+      <a routerLink="/dashboard" class="btn-primary" style="margin-top:24px">Retour au tableau de bord</a>
     </div>
   `,
-  styles: [
-    `
-      .error-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        font-family: sans-serif;
-      }
-      h1 {
-        color: #dc3545;
-      }
-    `,
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ErrorComponent {
   private readonly router = inject(Router);

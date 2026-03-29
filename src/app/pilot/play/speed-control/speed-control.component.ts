@@ -17,43 +17,83 @@ import { GameStateService } from '../../../core/services/game-state.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="speed-control" data-testid="speed-control">
-      <div class="speed-control__question-info">
-        <span class="speed-control__question-number" data-testid="question-number">
-          Question {{ (gs.state().questionIndex ?? 0) + 1 }}
+    <div data-testid="speed-control" class="flex-col gap-4">
+      <!-- Question meta -->
+      <div class="flex items-center gap-2 text-muted" style="font-size:11px">
+        <span class="display-num badge-speed"
+          style="font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid var(--purple-border)"
+          [style.background]="gs.status() === 'QUESTION_BUZZED' ? 'var(--purple-dim)' : 'var(--accent-dim)'"
+          [style.color]="gs.status() === 'QUESTION_BUZZED' ? 'var(--purple)' : 'var(--accent)'"
+          [style.border-color]="gs.status() === 'QUESTION_BUZZED' ? 'var(--purple-border)' : '#2a4a8a'"
+          data-testid="question-number">
+          Q{{ (gs.state().questionIndex ?? 0) + 1 }}
           @if (gs.state().totalQuestions) {
             / {{ gs.state().totalQuestions }}
           }
         </span>
+        <span class="badge-speed" style="font-size:10px;padding:2px 7px">SPEED</span>
+        @if (gs.state().timeLimit) {
+          <span>{{ gs.state().timeLimit }} secondes</span>
+        }
       </div>
 
-      <h2 class="speed-control__question-title" data-testid="question-title">
+      <!-- Question title -->
+      <div class="font-display font-bold" style="font-size:18px;line-height:1.35;letter-spacing:-0.3px" data-testid="question-title">
         {{ gs.state().questionTitle }}
-      </h2>
+      </div>
 
-      <!-- Timer -->
-      @if (gs.status() === 'QUESTION_OPEN' || gs.status() === 'QUESTION_BUZZED') {
-        <div class="speed-control__timer" data-testid="timer">
-          {{ remainingSeconds() }}s
+      <!-- Timer (QUESTION_OPEN) -->
+      @if (gs.status() === 'QUESTION_OPEN') {
+        <div class="timer-block" data-testid="timer">
+          <div class="timer-row">
+            <div>
+              <div class="timer-val" [class.critical]="remainingSeconds() <= 5">{{ remainingSeconds() }}</div>
+              <div class="timer-label">secondes restantes</div>
+            </div>
+          </div>
+          <div class="timer-bar-track">
+            <div class="timer-bar-fill"
+              [class.critical]="remainingSeconds() <= 5"
+              [style.width.%]="timerPercent()">
+            </div>
+          </div>
         </div>
       }
 
-      <!-- QUESTION_BUZZED: show buzzer info -->
+      <!-- Timer SUSPENDED (QUESTION_BUZZED) -->
       @if (gs.status() === 'QUESTION_BUZZED') {
-        <div class="speed-control__buzzer" data-testid="buzzer-info">
-          <span class="speed-control__buzzer-name">{{ gs.state().currentBuzzer }}</span>
-          <span class="speed-control__buzzer-label">a buzzé !</span>
+        <div class="timer-block" data-testid="timer">
+          <div class="flex items-center gap-3">
+            <div class="timer-val-s">{{ remainingSeconds() }}</div>
+            <div class="suspended-badge">&#9208; Suspendu</div>
+          </div>
+          <div class="timer-bar-track">
+            <div class="timer-bar-suspended" [style.width.%]="timerPercent()"></div>
+          </div>
+        </div>
+      }
+
+      <!-- QUESTION_BUZZED: Buzzer card -->
+      @if (gs.status() === 'QUESTION_BUZZED') {
+        <div style="background:var(--purple-dim);border:1.5px solid var(--purple);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;box-shadow:0 0 30px rgba(168,85,247,.15);animation:buzz-in .35s ease-out"
+          data-testid="buzzer-info">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--purple)">Buzzeur actif</div>
+          <div class="buzzer-avatar" style="width:56px;height:56px;border-radius:50%;background:var(--purple-dim);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--purple);box-shadow:0 0 20px rgba(168,85,247,.3);animation:pulse .8s ease-in-out infinite">
+            {{ gs.state().currentBuzzer?.charAt(0)?.toUpperCase() }}
+          </div>
+          <div class="font-display font-extrabold" style="font-size:22px;letter-spacing:-0.3px">{{ gs.state().currentBuzzer }}</div>
         </div>
 
         @if (gs.state().timerEnded) {
-          <div class="speed-control__hint" data-testid="timer-hint">
+          <div style="background:var(--amber-dim);border:1px solid #6a3a00;border-radius:10px;padding:12px 14px;font-size:13px;font-weight:700;color:var(--amber);text-align:center" data-testid="timer-hint">
             Temps écoulé — décidez maintenant
           </div>
         }
 
-        <div class="speed-control__actions" data-testid="buzz-actions">
+        <!-- Validate / Invalidate buttons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" data-testid="buzz-actions">
           <button
-            class="btn btn--success"
+            class="btn-validate"
             [disabled]="isWaitingValidation()"
             (click)="onValidateAnswer()"
             data-testid="btn-validate"
@@ -61,7 +101,7 @@ import { GameStateService } from '../../../core/services/game-state.service';
             Valider
           </button>
           <button
-            class="btn btn--danger"
+            class="btn-invalidate"
             [disabled]="isWaitingValidation()"
             (click)="onInvalidateAnswer()"
             data-testid="btn-invalidate"
@@ -71,13 +111,13 @@ import { GameStateService } from '../../../core/services/game-state.service';
         </div>
       }
 
-      <!-- QUESTION_OPEN: buttons disabled -->
+      <!-- QUESTION_OPEN: disabled buttons -->
       @if (gs.status() === 'QUESTION_OPEN') {
-        <div class="speed-control__actions" data-testid="open-actions">
-          <button class="btn btn--success" disabled data-testid="btn-validate">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" data-testid="open-actions">
+          <button class="btn-validate" disabled data-testid="btn-validate">
             Valider
           </button>
-          <button class="btn btn--danger" disabled data-testid="btn-invalidate">
+          <button class="btn-invalidate" disabled data-testid="btn-invalidate">
             Invalider
           </button>
         </div>
@@ -85,19 +125,19 @@ import { GameStateService } from '../../../core/services/game-state.service';
 
       <!-- QUESTION_CLOSED: results -->
       @if (gs.status() === 'QUESTION_CLOSED') {
-        <div class="speed-control__result" data-testid="result-phase">
+        <div data-testid="result-phase" class="flex-col gap-4">
           @if (speedWinner()) {
-            <div class="speed-control__winner" data-testid="winner">
+            <div style="text-align:center;padding:16px;background:var(--green-dim);border:1px solid var(--green-border);border-radius:10px;font-size:1.1rem;font-weight:700;color:var(--green)" data-testid="winner">
               Gagnant : {{ speedWinner() }}
             </div>
           } @else {
-            <div class="speed-control__no-winner" data-testid="no-winner">
+            <div style="text-align:center;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:1.1rem;color:var(--muted)" data-testid="no-winner">
               Aucun gagnant
             </div>
           }
 
           <button
-            class="btn btn--primary"
+            class="btn-next"
             [disabled]="isWaitingNext()"
             (click)="onTriggerNext()"
             data-testid="btn-next-question"
@@ -108,28 +148,7 @@ import { GameStateService } from '../../../core/services/game-state.service';
       }
     </div>
   `,
-  styles: [`
-    .speed-control { padding: 16px; }
-    .speed-control__question-info { margin-bottom: 8px; }
-    .speed-control__question-number { font-size: 0.9rem; color: #6c757d; font-weight: 600; }
-    .speed-control__question-title { margin: 0 0 16px; font-size: 1.25rem; }
-    .speed-control__timer { font-size: 2rem; font-weight: 700; text-align: center; margin: 16px 0; color: #0d6efd; }
-    .speed-control__buzzer { text-align: center; margin: 16px 0; padding: 16px; background: #fff3e0; border: 2px solid #fd7e14; border-radius: 8px; }
-    .speed-control__buzzer-name { font-size: 1.5rem; font-weight: 700; display: block; color: #e65100; }
-    .speed-control__buzzer-label { font-size: 0.9rem; color: #6c757d; }
-    .speed-control__hint { text-align: center; color: #dc3545; font-weight: 600; margin: 8px 0; }
-    .speed-control__actions { display: flex; gap: 12px; margin-top: 16px; }
-    .speed-control__result { margin-top: 16px; }
-    .speed-control__winner { text-align: center; padding: 16px; background: #d4edda; border-radius: 8px; font-size: 1.1rem; font-weight: 600; color: #155724; margin-bottom: 16px; }
-    .speed-control__no-winner { text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px; font-size: 1.1rem; color: #6c757d; margin-bottom: 16px; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; flex: 1; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { background: #6c757d; cursor: not-allowed; }
-    .btn--success { background: #28a745; color: #fff; }
-    .btn--success:disabled { background: #6c757d; cursor: not-allowed; }
-    .btn--danger { background: #dc3545; color: #fff; }
-    .btn--danger:disabled { background: #6c757d; cursor: not-allowed; }
-  `],
+  styles: [],
 })
 export class SpeedControlComponent implements OnInit, OnDestroy {
   protected readonly gs = inject(GameStateService);
@@ -152,6 +171,11 @@ export class SpeedControlComponent implements OnInit, OnDestroy {
     const winner = (lastResult.results as { participant_name: string; winner: boolean }[])
       .find((r) => r.winner);
     return winner?.participant_name ?? null;
+  });
+
+  protected readonly timerPercent = computed(() => {
+    const limit = this.gs.state().timeLimit ?? 30;
+    return limit > 0 ? (this.remainingSeconds() / limit) * 100 : 0;
   });
 
   ngOnInit(): void {

@@ -23,138 +23,125 @@ import { environment } from '../../environments/environment';
   standalone: true,
   imports: [StatusBadgeComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [],
   template: `
-    <div class="dashboard">
-      <header class="dashboard__header">
-        <h1>Tableau de bord</h1>
-        <button class="btn btn--primary" (click)="onNewGameClick()">
-          Nouvelle partie
-        </button>
-      </header>
+    <!-- Page header -->
+    <div class="page-header">
+      <h1 class="page-title">Tableau de bord</h1>
+      <button class="btn-primary" (click)="onNewGameClick()">
+        <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Nouvelle partie
+      </button>
+    </div>
 
-      @if (gs.isPiloting()) {
-        <div class="banner banner--active" data-testid="active-banner">
-          <div class="banner__info">
-            <strong>Partie en cours</strong>
-            <span>{{ gs.state().quizId }} — {{ gs.status() }}</span>
+    <!-- Active game banner -->
+    @if (gs.isPiloting()) {
+      <div class="banner-active" data-testid="active-banner">
+        <div class="banner-dot"></div>
+        <div class="banner-content">
+          <div class="banner-title">
+            {{ gs.state().quizId || 'Partie active' }}
             @if (gs.state().questionIndex !== null) {
-              <span>Question {{ gs.state().questionIndex }}</span>
+              <span style="font-weight:400;color:var(--muted)">— Question {{ gs.state().questionIndex }}</span>
             }
           </div>
-          <a
-            class="btn btn--outline"
-            [routerLink]="activeBannerRoute()"
-            data-testid="resume-piloting"
-          >
-            Reprendre le pilotage
-          </a>
+          <div class="banner-sub">
+            Statut :
+            <span style="color:#60a5fa;font-weight:500">
+              {{ gs.status() === 'PENDING' ? 'En attente' : 'En cours' }}
+            </span>
+          </div>
         </div>
-      }
+        <a
+          class="btn-outline-sm"
+          [routerLink]="activeBannerRoute()"
+          data-testid="resume-piloting"
+        >Reprendre le pilotage →</a>
+      </div>
+    }
 
-      @if (isLoading()) {
-        <div class="loading" data-testid="loading">Chargement…</div>
-      } @else {
-        <section class="metrics" data-testid="metrics">
-          <div class="metric-card">
-            <div class="metric-card__value" data-testid="metric-buzzers">
-              {{ gs.connectedBuzzers().length }}
-            </div>
-            <div class="metric-card__label">Buzzers connectés</div>
-            <div class="metric-card__sub" data-testid="buzzer-names">
-              {{ buzzersSummary() }}
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card__value" data-testid="metric-quizzes">
-              {{ quizCount() ?? '—' }}
-            </div>
-            <div class="metric-card__label">Quiz</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card__value" data-testid="metric-questions">
-              {{ questionCount() ?? '—' }}
-            </div>
-            <div class="metric-card__label">Questions</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card__value" data-testid="metric-games">
-              {{ gameCount() ?? '—' }}
-            </div>
-            <div class="metric-card__label">Parties jouées</div>
-          </div>
-        </section>
+    @if (isLoading()) {
+      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="loading">Chargement…</div>
+    } @else {
+      <!-- Metrics grid -->
+      <div class="metrics-grid" data-testid="metrics">
+        <div class="metric-card">
+          <div class="metric-label">Buzzers connectés<span class="live-badge">Live</span></div>
+          <div class="metric-value live" data-testid="metric-buzzers">{{ gs.connectedBuzzers().length }}</div>
+          <div class="metric-sub" data-testid="buzzer-names">{{ buzzersSummary() }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Quiz disponibles</div>
+          <div class="metric-value" data-testid="metric-quizzes">{{ quizCount() ?? '—' }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Questions en banque</div>
+          <div class="metric-value" data-testid="metric-questions">{{ questionCount() ?? '—' }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Parties jouées</div>
+          <div class="metric-value" data-testid="metric-games">{{ gameCount() ?? '—' }}</div>
+        </div>
+      </div>
 
-        <section class="recent-games">
-          <h2>Dernières parties</h2>
+      <!-- Content grid -->
+      <div class="content-grid">
+        <!-- Recent games widget -->
+        <div class="widget">
+          <div class="widget-header">
+            <span class="widget-title">Dernières parties</span>
+            <a class="widget-action" routerLink="/games">Voir tout →</a>
+          </div>
           @if (recentGames().length === 0) {
-            <p data-testid="no-games">Aucune partie</p>
+            <div style="padding:24px;text-align:center;color:var(--muted)" data-testid="no-games">Aucune partie</div>
           } @else {
-            <table class="table" data-testid="games-table">
-              <thead>
-                <tr>
-                  <th>Partie</th>
-                  <th>Statut</th>
-                  <th>Date</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (game of recentGames(); track game.id) {
-                  <tr>
-                    <td>{{ game.quiz_name }}</td>
-                    <td><app-status-badge [status]="game.status" /></td>
-                    <td>{{ formatDate(game.created_at) }}</td>
-                    <td>
-                      <a
-                        class="btn btn--sm"
-                        [routerLink]="gameDetailRoute(game)"
-                        data-testid="game-link"
-                      >
-                        Voir
-                      </a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+            <div class="games-table" data-testid="games-table">
+              @for (game of recentGames(); track game.id) {
+                <div class="games-row">
+                  <div>
+                    <div class="game-name">{{ game.quiz_name }}</div>
+                    <div class="game-date">{{ formatDate(game.created_at) }}</div>
+                  </div>
+                  <div><app-status-badge [status]="game.status" /></div>
+                  <div class="game-date">{{ game.participants.length }} joueurs</div>
+                  <a class="game-action" [routerLink]="gameDetailRoute(game)" data-testid="game-link">
+                    {{ game.status === 'COMPLETED' || game.status === 'IN_ERROR' ? 'Résultats →' : game.status === 'PENDING' ? 'Lobby →' : 'Piloter →' }}
+                  </a>
+                </div>
+              }
+            </div>
           }
-        </section>
-      }
+        </div>
 
-      @if (toastMessage()) {
-        <div class="toast" data-testid="toast">{{ toastMessage() }}</div>
-      }
+        <!-- Buzzers widget -->
+        <div class="widget">
+          <div class="widget-header">
+            <span class="widget-title">Buzzers</span>
+            <span style="font-size:11px;color:var(--green);font-weight:600">{{ gs.connectedBuzzers().length }} connectés</span>
+          </div>
+          <div class="buzzers-list">
+            @for (buzzer of gs.connectedBuzzers(); track buzzer) {
+              <div class="buzzer-row">
+                <div class="buzzer-avatar">{{ buzzer.substring(0, 2).toUpperCase() }}</div>
+                <div>
+                  <div class="buzzer-name">{{ buzzer }}</div>
+                </div>
+                <div class="buzzer-status-dot"></div>
+              </div>
+            }
+            @if (gs.connectedBuzzers().length === 0) {
+              <div style="padding:16px;text-align:center;color:var(--muted);font-size:12px">Aucun buzzer connecté</div>
+            }
+          </div>
+        </div>
+      </div>
+    }
 
-      @if (serverVersion()) {
-        <footer class="dashboard__footer" data-testid="server-version">
-          Serveur v{{ serverVersion() }}
-        </footer>
-      }
-    </div>
+    <!-- Toast -->
+    @if (toastMessage()) {
+      <div class="toast" data-testid="toast">{{ toastMessage() }}</div>
+    }
   `,
-  styles: [`
-    .dashboard { padding: 24px; max-width: 1200px; margin: 0 auto; }
-    .dashboard__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .dashboard__header h1 { margin: 0; font-size: 1.5rem; }
-    .banner--active { background: #cce5ff; color: #004085; padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .banner__info { display: flex; flex-direction: column; gap: 4px; }
-    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .metric-card { background: #f8f9fa; padding: 16px; border-radius: 8px; text-align: center; }
-    .metric-card__value { font-size: 2rem; font-weight: 700; }
-    .metric-card__label { font-size: 0.85rem; color: #6c757d; margin-top: 4px; }
-    .metric-card__sub { font-size: 0.75rem; color: #6c757d; margin-top: 4px; min-height: 1em; }
-    .loading { text-align: center; padding: 48px; color: #6c757d; }
-    .recent-games h2 { font-size: 1.1rem; margin-bottom: 12px; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #dee2e6; }
-    .table th { font-weight: 600; font-size: 0.85rem; color: #6c757d; }
-    .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--outline { background: transparent; border: 1px solid #004085; color: #004085; }
-    .btn--sm { padding: 4px 12px; font-size: 0.8rem; background: #e9ecef; color: #495057; }
-    .dashboard__footer { margin-top: 24px; text-align: center; font-size: 0.75rem; color: #adb5bd; }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: #856404; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-  `],
 })
 export class DashboardComponent {
   private readonly gameService = inject(GameService);
@@ -187,7 +174,6 @@ export class DashboardComponent {
 
   constructor() {
     this.loadDashboardData();
-    this.loadHealth();
   }
 
   private loadDashboardData(): void {
@@ -207,17 +193,6 @@ export class DashboardComponent {
           this.isLoading.set(false);
         },
         error: () => this.isLoading.set(false),
-      });
-  }
-
-  private loadHealth(): void {
-    this.http
-      .get<HealthResponse>(`${environment.serverUrl}/api/v1/health`)
-      .pipe(takeUntilDestroyed())
-      .subscribe({
-        next: (res) => {
-          if (res.version) this.serverVersion.set(res.version);
-        },
       });
   }
 
@@ -243,9 +218,7 @@ export class DashboardComponent {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today.getTime() - 86_400_000);
     const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
     const time = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
     if (target.getTime() === today.getTime()) return `Auj. ${time}`;
     if (target.getTime() === yesterday.getTime()) return `Hier ${time}`;
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });

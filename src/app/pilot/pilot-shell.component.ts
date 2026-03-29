@@ -6,6 +6,7 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet],
   template: '<router-outlet />',
+  styles: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PilotShellComponent {}

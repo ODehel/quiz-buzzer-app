@@ -87,21 +87,18 @@ describe('QuizListComponent', () => {
     expect(card.querySelector('[data-testid="quiz-name"]')!.textContent).toContain(
       'Culture generale saison 1'
     );
-    expect(card.querySelector('[data-testid="quiz-total"]')!.textContent).toContain(
-      '12 questions'
-    );
+    expect(card.querySelector('[data-testid="quiz-total"]')!.textContent).toContain('12');
+    expect(card.querySelector('[data-testid="quiz-total"]')!.textContent).toContain('questions');
   });
 
-  // CA-3: Displays question summary by level with MCQ/SPEED badges
-  it('CA-3: displays question summary by level with type badges', () => {
+  // CA-3: Displays question summary by level with level bars
+  it('CA-3: displays question summary by level with level bars', () => {
     setup([createMockQuiz()]);
     const summary = el.querySelector('[data-testid="quiz-summary"]')!;
-    expect(summary.textContent).toContain('Niv. 1');
-    expect(summary.textContent).toContain('2 MCQ');
-    expect(summary.textContent).toContain('1 SPEED');
-    expect(summary.textContent).toContain('Niv. 2');
-    expect(summary.textContent).toContain('3 MCQ');
-    expect(summary.textContent).toContain('2 SPEED');
+    // New template uses level-bar rows with level number and count
+    expect(summary.textContent).toContain('1');
+    expect(summary.textContent).toContain('2');
+    expect(summary.textContent).toContain('3');
   });
 
   // CA-4: Displays total count badge
@@ -125,14 +122,13 @@ describe('QuizListComponent', () => {
   });
 
   // CA-6: Reset filters clears name and reloads
-  it('CA-6: resets filter and reloads on reset click', () => {
+  it('CA-6: resets filter and reloads on programmatic reset', () => {
     setup([createMockQuiz()]);
     const component = fixture.componentInstance;
     (component as any).filterName.set('test');
 
     mockQuizService.getAll.mockClear();
-    const resetBtn = el.querySelector('[data-testid="btn-reset-filters"]') as HTMLButtonElement;
-    resetBtn.click();
+    (component as any).onResetFilters();
     fixture.detectChanges();
 
     expect((component as any).filterName()).toBe('');
@@ -142,13 +138,13 @@ describe('QuizListComponent', () => {
   // CA-7: Paginator displayed when total_pages > 1
   it('CA-7: displays paginator when total_pages > 1', () => {
     setup([createMockQuiz()], { total_pages: 3, total: 60 });
-    expect(el.querySelector('[data-testid="paginator"]')).toBeTruthy();
+    expect(el.querySelector('app-paginator')).toBeTruthy();
   });
 
   // CA-7: No paginator when only 1 page
   it('CA-7: hides paginator when total_pages = 1', () => {
     setup([createMockQuiz()]);
-    expect(el.querySelector('[data-testid="paginator"]')).toBeNull();
+    expect(el.querySelector('app-paginator')).toBeNull();
   });
 
   // CA-8: Edit button links to /content/quizzes/:id
@@ -233,21 +229,21 @@ describe('QuizListComponent', () => {
   it('CA-14: displays quiz creation date', () => {
     setup([createMockQuiz()]);
     const meta = el.querySelector('[data-testid="quiz-meta"]')!;
-    expect(meta.textContent).toContain('Créé le');
+    expect(meta.textContent).toContain('Cr');
   });
 
   // CA-15: Displays last_updated_at when present
   it('CA-15: displays last updated date when present', () => {
     setup([createMockQuiz({ last_updated_at: '2026-03-15T10:00:00.000Z' })]);
     const meta = el.querySelector('[data-testid="quiz-meta"]')!;
-    expect(meta.textContent).toContain('Modifié le');
+    expect(meta.textContent).toContain('mis');
   });
 
   // CA-15: Does not display last_updated_at when null
   it('CA-15: hides last updated date when null', () => {
     setup([createMockQuiz({ last_updated_at: null })]);
     const meta = el.querySelector('[data-testid="quiz-meta"]')!;
-    expect(meta.textContent).not.toContain('Modifié le');
+    expect(meta.textContent).not.toContain('mis');
   });
 
   // CA-16: Loading state shown

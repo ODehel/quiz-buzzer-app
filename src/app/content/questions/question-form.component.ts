@@ -7,7 +7,7 @@ import {
   computed,
   ViewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
@@ -29,332 +29,394 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/web
 const ACCEPTED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 Mo
 
+const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
+
 @Component({
   selector: 'app-question-form',
   standalone: true,
-  imports: [FormsModule, ConfirmDialogComponent],
+  imports: [FormsModule, RouterLink, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="question-form">
-      <header class="question-form__header">
-        <h1>{{ mode() === 'create' ? 'Nouvelle question' : 'Modifier la question' }}</h1>
-      </header>
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a routerLink="/content/questions">Questions</a>
+      <span class="breadcrumb-sep">&rsaquo;</span>
+      <span>{{ mode() === 'create' ? 'Nouvelle question' : 'Modifier la question' }}</span>
+    </div>
 
-      <form (ngSubmit)="onSubmit()" novalidate>
-        <!-- Type toggle -->
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          @if (mode() === 'create') {
-            <div class="toggle" data-testid="type-toggle">
-              <button
-                type="button"
-                class="toggle__btn"
-                [class.toggle__btn--active]="formType() === 'MCQ'"
-                (click)="onTypeChange('MCQ')"
-                data-testid="toggle-mcq"
-              >MCQ</button>
-              <button
-                type="button"
-                class="toggle__btn"
-                [class.toggle__btn--active]="formType() === 'SPEED'"
-                (click)="onTypeChange('SPEED')"
-                data-testid="toggle-speed"
-              >SPEED</button>
-            </div>
-          } @else {
-            <span class="type-readonly" data-testid="type-readonly">{{ formType() }}</span>
-          }
-        </div>
+    <!-- Header -->
+    <div class="page-header">
+      <h1 class="page-title">{{ mode() === 'create' ? 'Nouvelle question' : 'Modifier la question' }}</h1>
+    </div>
 
-        <!-- Theme -->
-        <div class="form-group">
-          <label class="form-label" for="theme">Theme</label>
-          <select
-            id="theme"
-            [ngModel]="formThemeId()"
-            (ngModelChange)="formThemeId.set($event)"
-            [name]="'theme'"
-            data-testid="input-theme"
-          >
-            <option value="">-- Choisir un theme --</option>
-            @for (theme of themes(); track theme.id) {
-              <option [value]="theme.id">{{ theme.name }}</option>
-            }
-          </select>
-          @if (fieldErrors()['theme_id']) {
-            <span class="field-error" data-testid="error-theme">{{ fieldErrors()['theme_id'] }}</span>
-          }
-        </div>
+    <form (ngSubmit)="onSubmit()" novalidate>
+      <div class="form-grid">
 
-        <!-- Title -->
-        <div class="form-group">
-          <label class="form-label" for="title">Titre</label>
-          <input
-            id="title"
-            type="text"
-            [ngModel]="formTitle()"
-            (ngModelChange)="formTitle.set($event)"
-            [name]="'title'"
-            maxlength="200"
-            data-testid="input-title"
-          />
-          @if (fieldErrors()['title']) {
-            <span class="field-error" data-testid="error-title">{{ fieldErrors()['title'] }}</span>
-          }
-        </div>
+        <!-- Left column -->
+        <div>
 
-        <!-- MCQ choices -->
-        @if (formType() === 'MCQ') {
-          <fieldset class="form-group" data-testid="mcq-choices">
-            <legend class="form-label">Propositions</legend>
-            @for (choice of formChoices(); track $index; let i = $index) {
-              <div class="choice-row">
-                <input
-                  type="radio"
-                  [name]="'correct'"
-                  [checked]="formCorrectAnswer() === formChoices()[i]"
-                  (change)="onCorrectAnswerChange(i)"
-                  [attr.data-testid]="'radio-choice-' + i"
-                />
-                <input
-                  type="text"
-                  [ngModel]="formChoices()[i]"
-                  (ngModelChange)="onChoiceChange(i, $event)"
-                  [name]="'choice-' + i"
-                  maxlength="40"
-                  [placeholder]="'Choix ' + (i + 1)"
-                  [attr.data-testid]="'input-choice-' + i"
-                />
-              </div>
-            }
-            @if (fieldErrors()['choices']) {
-              <span class="field-error" data-testid="error-choices">{{ fieldErrors()['choices'] }}</span>
-            }
-            @if (fieldErrors()['correct_answer']) {
-              <span class="field-error" data-testid="error-correct-answer">{{ fieldErrors()['correct_answer'] }}</span>
-            }
-          </fieldset>
-        }
-
-        <!-- SPEED answer -->
-        @if (formType() === 'SPEED') {
-          <div class="form-group" data-testid="speed-answer">
-            <label class="form-label" for="correct-answer">Reponse attendue</label>
-            <input
-              id="correct-answer"
-              type="text"
-              [ngModel]="formCorrectAnswer()"
-              (ngModelChange)="formCorrectAnswer.set($event)"
-              [name]="'correct_answer'"
-              maxlength="40"
-              data-testid="input-correct-answer"
-            />
-            @if (fieldErrors()['correct_answer']) {
-              <span class="field-error" data-testid="error-correct-answer">{{ fieldErrors()['correct_answer'] }}</span>
-            }
-          </div>
-        }
-
-        <!-- Sliders -->
-        <div class="sliders">
-          <div class="form-group">
-            <label class="form-label">Niveau : {{ formLevel() }}</label>
-            <div class="level-dots" data-testid="level-visual">
-              @for (dot of [1,2,3,4,5]; track dot) {
-                <span class="dot" [class.dot--active]="dot <= formLevel()"></span>
+          <!-- General information card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Informations generales</span>
+              <!-- Type toggle [CA-16, CA-17] -->
+              @if (mode() === 'create') {
+                <div class="type-toggle" data-testid="type-toggle">
+                  <button
+                    type="button"
+                    class="type-btn"
+                    [class.active-mcq]="formType() === 'MCQ'"
+                    (click)="onTypeChange('MCQ')"
+                    data-testid="toggle-mcq"
+                  >MCQ</button>
+                  <button
+                    type="button"
+                    class="type-btn"
+                    [class.active-speed]="formType() === 'SPEED'"
+                    (click)="onTypeChange('SPEED')"
+                    data-testid="toggle-speed"
+                  >SPEED</button>
+                </div>
+              } @else {
+                <span class="badge-type" [class.badge-mcq]="formType() === 'MCQ'" [class.badge-speed]="formType() === 'SPEED'" data-testid="type-readonly">{{ formType() }}</span>
               }
             </div>
-            <input
-              type="range" min="1" max="5" step="1"
-              [ngModel]="formLevel()"
-              (ngModelChange)="formLevel.set($event)"
-              [name]="'level'"
-              data-testid="slider-level"
-            />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Duree : {{ formTimeLimit() }}s</label>
-            <input
-              type="range" min="5" max="120" step="5"
-              [ngModel]="formTimeLimit()"
-              (ngModelChange)="formTimeLimit.set($event)"
-              [name]="'time_limit'"
-              data-testid="slider-duration"
-            />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Points : {{ formPoints() }} pts</label>
-            <input
-              type="range" min="50" max="500" step="50"
-              [ngModel]="formPoints()"
-              (ngModelChange)="formPoints.set($event)"
-              [name]="'points'"
-              data-testid="slider-points"
-            />
-          </div>
-        </div>
+            <div class="card-body">
 
-        <!-- Media upload (edit mode only) -->
-        <div class="media-section" data-testid="media-section">
-          <h2>Medias</h2>
-
-          <!-- Image -->
-          <div class="media-zone">
-            <label class="form-label">Image</label>
-            @if (mode() === 'create') {
-              <div class="drop-zone drop-zone--disabled" data-testid="drop-image-disabled" title="Sauvegardez d'abord la question pour ajouter des medias">
-                Upload desactive (sauvegardez d'abord)
+              <!-- Theme -->
+              <div class="field">
+                <label class="field-label" for="theme">Theme <span class="required">*</span></label>
+                <select
+                  id="theme"
+                  class="field-select"
+                  [ngModel]="formThemeId()"
+                  (ngModelChange)="formThemeId.set($event)"
+                  [name]="'theme'"
+                  data-testid="input-theme"
+                >
+                  <option value="">-- Choisir un theme --</option>
+                  @for (theme of themes(); track theme.id) {
+                    <option [value]="theme.id">{{ theme.name }}</option>
+                  }
+                </select>
+                @if (fieldErrors()['theme_id']) {
+                  <span class="field-error" data-testid="error-theme">{{ fieldErrors()['theme_id'] }}</span>
+                }
               </div>
-            } @else if (imagePath()) {
-              <div class="media-preview" data-testid="image-preview">
-                <img [src]="imageUrl()" alt="Preview" class="preview-img" />
+
+              <!-- Title -->
+              <div class="field">
+                <label class="field-label" for="title">Titre de la question <span class="required">*</span></label>
+                <input
+                  id="title"
+                  type="text"
+                  class="field-input"
+                  [ngModel]="formTitle()"
+                  (ngModelChange)="formTitle.set($event)"
+                  [name]="'title'"
+                  maxlength="200"
+                  placeholder="Commencez par une majuscule..."
+                  data-testid="input-title"
+                />
+                <div class="field-hint">10 a 250 caracteres</div>
+                @if (fieldErrors()['title']) {
+                  <span class="field-error" data-testid="error-title">{{ fieldErrors()['title'] }}</span>
+                }
+              </div>
+
+            </div>
+          </div>
+
+          <!-- MCQ choices card -->
+          @if (formType() === 'MCQ') {
+            <div class="card" data-testid="mcq-choices">
+              <div class="card-header">
+                <span class="card-title">Propositions</span>
+                <span class="field-hint">Cochez la bonne reponse</span>
+              </div>
+              <div class="card-body">
+                <div class="choices-list">
+                  @for (choice of formChoices(); track $index; let i = $index) {
+                    <div
+                      class="choice-row"
+                      [class.correct]="formCorrectAnswer() === formChoices()[i] && formChoices()[i] !== ''"
+                    >
+                      <input
+                        type="radio"
+                        class="choice-radio"
+                        [name]="'correct'"
+                        [checked]="formCorrectAnswer() === formChoices()[i] && formChoices()[i] !== ''"
+                        (change)="onCorrectAnswerChange(i)"
+                        [attr.data-testid]="'radio-choice-' + i"
+                      />
+                      <span class="choice-letter">{{ choiceLetters[i] }}</span>
+                      <input
+                        type="text"
+                        class="choice-input"
+                        [ngModel]="formChoices()[i]"
+                        (ngModelChange)="onChoiceChange(i, $event)"
+                        [name]="'choice-' + i"
+                        maxlength="40"
+                        [placeholder]="'Choix ' + choiceLetters[i] + '...'"
+                        [attr.data-testid]="'input-choice-' + i"
+                      />
+                    </div>
+                  }
+                </div>
+                @if (fieldErrors()['choices']) {
+                  <span class="field-error" data-testid="error-choices">{{ fieldErrors()['choices'] }}</span>
+                }
+                @if (fieldErrors()['correct_answer']) {
+                  <span class="field-error" data-testid="error-correct-answer">{{ fieldErrors()['correct_answer'] }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- SPEED answer card -->
+          @if (formType() === 'SPEED') {
+            <div class="card" data-testid="speed-answer">
+              <div class="card-header">
+                <span class="card-title">Reponse attendue</span>
+              </div>
+              <div class="card-body">
+                <div class="field">
+                  <label class="field-label" for="correct-answer">Reponse <span class="required">*</span></label>
+                  <input
+                    id="correct-answer"
+                    type="text"
+                    class="field-input"
+                    [ngModel]="formCorrectAnswer()"
+                    (ngModelChange)="formCorrectAnswer.set($event)"
+                    [name]="'correct_answer'"
+                    maxlength="40"
+                    data-testid="input-correct-answer"
+                  />
+                  @if (fieldErrors()['correct_answer']) {
+                    <span class="field-error" data-testid="error-correct-answer">{{ fieldErrors()['correct_answer'] }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Parameters card (sliders) -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Parametres</span>
+            </div>
+            <div class="card-body">
+
+              <!-- Level slider [CA-23] -->
+              <div class="slider-row">
+                <div class="slider-header">
+                  <label class="field-label">Niveau de difficulte</label>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div class="level-dots-preview" data-testid="level-visual">
+                      @for (dot of [1,2,3,4,5]; track dot) {
+                        <div
+                          class="ldot"
+                          [class.on-1]="dot <= formLevel() && dot === 1"
+                          [class.on-2]="dot <= formLevel() && dot === 2"
+                          [class.on-3]="dot <= formLevel() && dot === 3"
+                          [class.on-4]="dot <= formLevel() && dot === 4"
+                          [class.on-5]="dot <= formLevel() && dot === 5"
+                        ></div>
+                      }
+                    </div>
+                    <span class="slider-value">{{ formLevel() }}</span>
+                  </div>
+                </div>
+                <input
+                  type="range" min="1" max="5" step="1"
+                  [ngModel]="formLevel()"
+                  (ngModelChange)="formLevel.set($event)"
+                  [name]="'level'"
+                  data-testid="slider-level"
+                />
+              </div>
+
+              <!-- Duration slider [CA-24] -->
+              <div class="slider-row">
+                <div class="slider-header">
+                  <label class="field-label">Duree</label>
+                  <div>
+                    <span class="slider-value">{{ formTimeLimit() }}</span>
+                    <span class="slider-unit">secondes</span>
+                  </div>
+                </div>
+                <input
+                  type="range" min="5" max="120" step="5"
+                  [ngModel]="formTimeLimit()"
+                  (ngModelChange)="formTimeLimit.set($event)"
+                  [name]="'time_limit'"
+                  data-testid="slider-duration"
+                />
+              </div>
+
+              <!-- Points slider [CA-25] -->
+              <div class="slider-row">
+                <div class="slider-header">
+                  <label class="field-label">Points</label>
+                  <div>
+                    <span class="slider-value">{{ formPoints() }}</span>
+                    <span class="slider-unit">pts</span>
+                  </div>
+                </div>
+                <input
+                  type="range" min="50" max="500" step="50"
+                  [ngModel]="formPoints()"
+                  (ngModelChange)="formPoints.set($event)"
+                  [name]="'points'"
+                  data-testid="slider-points"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Media card [CA-33] -->
+          <div class="card" data-testid="media-section">
+            <div class="card-header">
+              <span class="card-title">Medias</span>
+              @if (mode() === 'create') {
+                <span class="field-hint" style="color:var(--amber)">Disponibles apres creation</span>
+              }
+            </div>
+            <div class="card-body">
+
+              <!-- Image zone -->
+              <div class="field">
+                <label class="field-label">Image</label>
+                @if (mode() === 'create') {
+                  <div class="media-zone" data-testid="drop-image-disabled" title="Sauvegardez d'abord la question pour ajouter des medias">
+                    <div class="media-zone-label">Upload desactive (sauvegardez d'abord)</div>
+                  </div>
+                } @else if (imagePath()) {
+                  <div class="media-preview" data-testid="image-preview">
+                    <img [src]="imageUrl()" alt="Preview" class="preview-img" />
+                    <button
+                      type="button"
+                      class="btn-ghost"
+                      (click)="onDeleteMedia('image')"
+                      data-testid="btn-delete-image"
+                    >Supprimer</button>
+                  </div>
+                } @else {
+                  <div
+                    class="drop-zone"
+                    (click)="imageInput.click()"
+                    (dragover)="$event.preventDefault()"
+                    (drop)="onFileDrop($event, 'image')"
+                    data-testid="drop-image"
+                  >
+                    Glisser-deposer ou cliquer pour ajouter une image
+                  </div>
+                  <input
+                    #imageInput
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    (change)="onFileSelect($event, 'image')"
+                    hidden
+                    data-testid="file-input-image"
+                  />
+                }
+                @if (fieldErrors()['image']) {
+                  <span class="field-error" data-testid="error-image">{{ fieldErrors()['image'] }}</span>
+                }
+              </div>
+
+              <!-- Audio zone -->
+              <div class="field">
+                <label class="field-label">Audio</label>
+                @if (mode() === 'create') {
+                  <div class="media-zone" data-testid="drop-audio-disabled" title="Sauvegardez d'abord la question pour ajouter des medias">
+                    <div class="media-zone-label">Upload desactive (sauvegardez d'abord)</div>
+                  </div>
+                } @else if (audioPath()) {
+                  <div class="media-preview" data-testid="audio-preview">
+                    <span>Fichier audio present</span>
+                    <button
+                      type="button"
+                      class="btn-ghost"
+                      (click)="onDeleteMedia('audio')"
+                      data-testid="btn-delete-audio"
+                    >Supprimer</button>
+                  </div>
+                } @else {
+                  <div
+                    class="drop-zone"
+                    (click)="audioInput.click()"
+                    (dragover)="$event.preventDefault()"
+                    (drop)="onFileDrop($event, 'audio')"
+                    data-testid="drop-audio"
+                  >
+                    Glisser-deposer ou cliquer pour ajouter un audio
+                  </div>
+                  <input
+                    #audioInput
+                    type="file"
+                    accept="audio/mpeg,audio/wav,audio/ogg"
+                    (change)="onFileSelect($event, 'audio')"
+                    hidden
+                    data-testid="file-input-audio"
+                  />
+                }
+                @if (fieldErrors()['audio']) {
+                  <span class="field-error" data-testid="error-audio">{{ fieldErrors()['audio'] }}</span>
+                }
+              </div>
+
+            </div>
+          </div>
+
+        </div><!-- /left column -->
+
+        <!-- Right column -->
+        <div class="sidebar-right">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Actions</span>
+            </div>
+            <div class="card-body">
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  class="btn-primary"
+                  [disabled]="isSubmitting()"
+                  data-testid="btn-submit"
+                >
+                  {{ mode() === 'create' ? 'Creer la question' : 'Enregistrer les modifications' }}
+                </button>
                 <button
                   type="button"
-                  class="btn btn--sm btn--danger-icon"
-                  (click)="onDeleteMedia('image')"
-                  data-testid="btn-delete-image"
-                >Supprimer</button>
+                  class="btn-ghost"
+                  (click)="onCancel()"
+                  data-testid="btn-cancel"
+                >Annuler</button>
               </div>
-            } @else {
-              <div
-                class="drop-zone"
-                (click)="imageInput.click()"
-                (dragover)="$event.preventDefault()"
-                (drop)="onFileDrop($event, 'image')"
-                data-testid="drop-image"
-              >
-                Glisser-deposer ou cliquer pour ajouter une image
-              </div>
-              <input
-                #imageInput
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                (change)="onFileSelect($event, 'image')"
-                hidden
-                data-testid="file-input-image"
-              />
-            }
-            @if (fieldErrors()['image']) {
-              <span class="field-error" data-testid="error-image">{{ fieldErrors()['image'] }}</span>
-            }
+            </div>
           </div>
+        </div><!-- /right column -->
 
-          <!-- Audio -->
-          <div class="media-zone">
-            <label class="form-label">Audio</label>
-            @if (mode() === 'create') {
-              <div class="drop-zone drop-zone--disabled" data-testid="drop-audio-disabled" title="Sauvegardez d'abord la question pour ajouter des medias">
-                Upload desactive (sauvegardez d'abord)
-              </div>
-            } @else if (audioPath()) {
-              <div class="media-preview" data-testid="audio-preview">
-                <span>Fichier audio present</span>
-                <button
-                  type="button"
-                  class="btn btn--sm btn--danger-icon"
-                  (click)="onDeleteMedia('audio')"
-                  data-testid="btn-delete-audio"
-                >Supprimer</button>
-              </div>
-            } @else {
-              <div
-                class="drop-zone"
-                (click)="audioInput.click()"
-                (dragover)="$event.preventDefault()"
-                (drop)="onFileDrop($event, 'audio')"
-                data-testid="drop-audio"
-              >
-                Glisser-deposer ou cliquer pour ajouter un audio
-              </div>
-              <input
-                #audioInput
-                type="file"
-                accept="audio/mpeg,audio/wav,audio/ogg"
-                (change)="onFileSelect($event, 'audio')"
-                hidden
-                data-testid="file-input-audio"
-              />
-            }
-            @if (fieldErrors()['audio']) {
-              <span class="field-error" data-testid="error-audio">{{ fieldErrors()['audio'] }}</span>
-            }
-          </div>
-        </div>
+      </div>
+    </form>
 
-        <!-- Submit -->
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn--secondary"
-            (click)="onCancel()"
-            data-testid="btn-cancel"
-          >Annuler</button>
-          <button
-            type="submit"
-            class="btn btn--primary"
-            [disabled]="isSubmitting()"
-            data-testid="btn-submit"
-          >
-            {{ mode() === 'create' ? 'Creer la question' : 'Enregistrer les modifications' }}
-          </button>
-        </div>
-      </form>
+    @if (toastMessage()) {
+      <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">
+        {{ toastMessage() }}
+      </div>
+    }
 
-      @if (toastMessage()) {
-        <div class="toast" [class.toast--error]="toastIsError()" data-testid="toast">
-          {{ toastMessage() }}
-        </div>
-      }
+    @if (isUploading()) {
+      <div class="upload-overlay" data-testid="uploading">
+        Upload {{ isUploading() }} en cours...
+      </div>
+    }
 
-      @if (isUploading()) {
-        <div class="upload-overlay" data-testid="uploading">
-          Upload {{ isUploading() }} en cours...
-        </div>
-      }
-
-      <app-confirm-dialog />
-    </div>
+    <app-confirm-dialog />
   `,
-  styles: [`
-    .question-form { padding: 24px; max-width: 800px; margin: 0 auto; }
-    .question-form__header { margin-bottom: 24px; }
-    .question-form__header h1 { margin: 0; font-size: 1.5rem; }
-    .form-group { margin-bottom: 16px; }
-    .form-label { display: block; font-weight: 600; font-size: 0.85rem; color: #495057; margin-bottom: 4px; }
-    .form-group select, .form-group input[type="text"] { width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; }
-    .form-group input[type="range"] { width: 100%; }
-    .toggle { display: flex; gap: 0; }
-    .toggle__btn { padding: 8px 20px; border: 1px solid #ced4da; background: #fff; cursor: pointer; font-size: 0.9rem; }
-    .toggle__btn:first-child { border-radius: 4px 0 0 4px; }
-    .toggle__btn:last-child { border-radius: 0 4px 4px 0; }
-    .toggle__btn--active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
-    .type-readonly { display: inline-block; padding: 8px 20px; background: #e9ecef; border-radius: 4px; font-weight: 600; }
-    .choice-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .choice-row input[type="text"] { flex: 1; padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem; }
-    .sliders { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .level-dots { display: flex; gap: 4px; margin-bottom: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #dee2e6; }
-    .dot--active { background: #ffc107; }
-    .field-error { display: block; color: #dc3545; font-size: 0.8rem; margin-top: 4px; }
-    .media-section { margin-top: 24px; margin-bottom: 24px; }
-    .media-section h2 { font-size: 1.1rem; margin-bottom: 12px; }
-    .media-zone { margin-bottom: 16px; }
-    .drop-zone { border: 2px dashed #ced4da; border-radius: 8px; padding: 24px; text-align: center; color: #6c757d; cursor: pointer; font-size: 0.9rem; }
-    .drop-zone:hover { border-color: #0d6efd; color: #0d6efd; }
-    .drop-zone--disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-    .media-preview { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
-    .preview-img { max-width: 120px; max-height: 80px; border-radius: 4px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
-    .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { opacity: 0.5; cursor: default; }
-    .btn--secondary { background: #e9ecef; color: #495057; }
-    .btn--sm { padding: 4px 12px; font-size: 0.8rem; }
-    .btn--danger-icon { background: #f8d7da; color: #842029; }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: #198754; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
-    .toast--error { background: #dc3545; }
-    .upload-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.2rem; z-index: 999; }
-  `],
+  styles: [],
 })
 export class QuestionFormComponent {
   private readonly route = inject(ActivatedRoute);
@@ -396,6 +458,8 @@ export class QuestionFormComponent {
   protected readonly toastMessage = signal<string | null>(null);
   protected readonly toastIsError = signal(false);
   protected readonly themes = signal<Theme[]>([]);
+
+  protected readonly choiceLetters = CHOICE_LETTERS;
 
   protected readonly imageUrl = computed(() => {
     const path = this.imagePath();

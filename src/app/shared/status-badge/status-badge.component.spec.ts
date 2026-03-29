@@ -30,62 +30,62 @@ describe('StatusBadgeComponent', () => {
   it('renders "En attente" with amber class for PENDING status', () => {
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('En attente');
-    expect(badge.classList).toContain('badge--amber');
+    expect(badge.classList).toContain('badge-pending');
   });
 
-  it('renders "En cours" with blue class for OPEN status', () => {
+  it('renders "En cours" with open class for OPEN status', () => {
     host.status = 'OPEN';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('En cours');
-    expect(badge.classList).toContain('badge--blue');
+    expect(badge.classList).toContain('badge-open');
   });
 
-  it('renders "En cours" with blue class for QUESTION_TITLE status', () => {
+  it('renders "En cours" with open class for QUESTION_TITLE status', () => {
     host.status = 'QUESTION_TITLE';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('En cours');
-    expect(badge.classList).toContain('badge--blue');
+    expect(badge.classList).toContain('badge-open');
   });
 
-  it('renders "En cours" with blue class for QUESTION_OPEN status', () => {
+  it('renders "En cours" with open class for QUESTION_OPEN status', () => {
     host.status = 'QUESTION_OPEN';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('En cours');
-    expect(badge.classList).toContain('badge--blue');
+    expect(badge.classList).toContain('badge-open');
   });
 
-  it('renders "En cours" with blue class for QUESTION_BUZZED status', () => {
+  it('renders "En cours" with open class for QUESTION_BUZZED status', () => {
     host.status = 'QUESTION_BUZZED';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('En cours');
-    expect(badge.classList).toContain('badge--blue');
+    expect(badge.classList).toContain('badge-open');
   });
 
-  it('renders "En cours" with blue class for QUESTION_CLOSED status', () => {
+  it('renders "En cours" with open class for QUESTION_CLOSED status', () => {
     host.status = 'QUESTION_CLOSED';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('En cours');
-    expect(badge.classList).toContain('badge--blue');
+    expect(badge.classList).toContain('badge-open');
   });
 
-  it('renders "Terminée" with green class for COMPLETED status', () => {
+  it('renders "Terminée" with completed class for COMPLETED status', () => {
     host.status = 'COMPLETED';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('Terminée');
-    expect(badge.classList).toContain('badge--green');
+    expect(badge.classList).toContain('badge-completed');
   });
 
-  it('renders "Erreur" with red class for IN_ERROR status', () => {
+  it('renders "Erreur" with error class for IN_ERROR status', () => {
     host.status = 'IN_ERROR';
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.badge');
     expect(badge.textContent.trim()).toBe('Erreur');
-    expect(badge.classList).toContain('badge--red');
+    expect(badge.classList).toContain('badge-error');
   });
 });

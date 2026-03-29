@@ -152,8 +152,8 @@ describe('GameResultsComponent', () => {
     expect(component['getCellStatus'](qr, 'Bob')).toBe('wrong');
   });
 
-  // CA-46: SPEED with no answers shows absent
-  it('CA-46 — getCellStatus returns absent for SPEED with empty results', () => {
+  // CA-46: SPEED with no answers shows dash
+  it('CA-46 — getCellStatus returns dash for SPEED with empty results', () => {
     const { component } = createComponent(null);
     const qr: QuestionResult = {
       question_index: 2,
@@ -163,7 +163,7 @@ describe('GameResultsComponent', () => {
       ranking: [],
     };
 
-    expect(component['getCellStatus'](qr, 'Alice')).toBe('absent');
+    expect(component['getCellStatus'](qr, 'Alice')).toBe('dash');
   });
 
   it('CA-46 — getCellLabel returns dash for SPEED with empty results', () => {

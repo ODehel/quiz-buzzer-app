@@ -17,26 +17,39 @@ import { GameStateService } from '../../../core/services/game-state.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mcq-control" data-testid="mcq-control">
-      <!-- QUESTION_TITLE state -->
+    <div data-testid="mcq-control" class="flex-col gap-4">
+      <!-- Question meta -->
+      <div class="flex items-center gap-2 text-muted" style="font-size:11px">
+        <span class="display-num badge-mcq"
+          style="font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid #2a4a8a"
+          [style.background]="gs.status() === 'QUESTION_CLOSED' ? 'var(--green-dim)' : ''"
+          [style.color]="gs.status() === 'QUESTION_CLOSED' ? 'var(--green)' : 'var(--accent)'"
+          [style.border-color]="gs.status() === 'QUESTION_CLOSED' ? 'var(--green-border)' : ''"
+          data-testid="question-number">
+          Q{{ (gs.state().questionIndex ?? 0) + 1 }}
+          @if (gs.state().totalQuestions) {
+            / {{ gs.state().totalQuestions }}
+          }
+          @if (gs.status() === 'QUESTION_CLOSED') {
+            CORRIG&Eacute;E
+          }
+        </span>
+        <span class="badge-mcq" style="font-size:10px;padding:2px 7px;border-radius:5px">MCQ</span>
+        @if (gs.state().timeLimit) {
+          <span>{{ gs.state().timeLimit }} secondes</span>
+        }
+      </div>
+
+      <!-- Question title -->
+      <div class="font-display font-bold" style="font-size:18px;line-height:1.35;letter-spacing:-0.3px" data-testid="question-title">
+        {{ gs.state().questionTitle }}
+      </div>
+
+      <!-- QUESTION_TITLE state: show trigger choices button -->
       @if (gs.status() === 'QUESTION_TITLE') {
-        <div class="mcq-control__title-phase" data-testid="title-phase">
-          <div class="mcq-control__question-info">
-            <span class="mcq-control__question-number" data-testid="question-number">
-              Question {{ (gs.state().questionIndex ?? 0) + 1 }}
-              @if (gs.state().totalQuestions) {
-                / {{ gs.state().totalQuestions }}
-              }
-            </span>
-            <span class="mcq-control__time-limit" data-testid="time-limit">
-              {{ gs.state().timeLimit }}s
-            </span>
-          </div>
-          <h2 class="mcq-control__question-title" data-testid="question-title">
-            {{ gs.state().questionTitle }}
-          </h2>
+        <div data-testid="title-phase">
           <button
-            class="btn btn--primary"
+            class="btn-primary btn-primary--lg"
             [disabled]="isWaitingChoices()"
             (click)="onTriggerChoices()"
             data-testid="btn-trigger-choices"
@@ -46,76 +59,112 @@ import { GameStateService } from '../../../core/services/game-state.service';
         </div>
       }
 
-      <!-- QUESTION_OPEN state -->
+      <!-- QUESTION_OPEN state: timer + choices + corriger -->
       @if (gs.status() === 'QUESTION_OPEN') {
-        <div class="mcq-control__open-phase" data-testid="open-phase">
-          <div class="mcq-control__question-info">
-            <span class="mcq-control__question-number" data-testid="question-number">
-              Question {{ (gs.state().questionIndex ?? 0) + 1 }}
-              @if (gs.state().totalQuestions) {
-                / {{ gs.state().totalQuestions }}
-              }
-            </span>
+        <div data-testid="open-phase" class="flex-col gap-4">
+          <!-- Timer -->
+          <div class="timer-block" data-testid="timer">
+            <div class="timer-row">
+              <div>
+                <div class="timer-val" [class.critical]="remainingSeconds() <= 5">{{ remainingSeconds() }}</div>
+                <div class="timer-label">secondes restantes</div>
+              </div>
+            </div>
+            <div class="timer-bar-track">
+              <div class="timer-bar-fill"
+                [class.critical]="remainingSeconds() <= 5"
+                [style.width.%]="timerPercent()">
+              </div>
+            </div>
           </div>
-          <h2 class="mcq-control__question-title" data-testid="question-title">
-            {{ gs.state().questionTitle }}
-          </h2>
 
-          <div class="mcq-control__timer" data-testid="timer">
-            {{ remainingSeconds() }}s
-          </div>
-
-          <div class="mcq-control__choices" data-testid="choices">
+          <!-- Choices grid -->
+          <div class="choices-grid" data-testid="choices">
             @for (choice of gs.state().choices; track $index; let i = $index) {
-              <div class="mcq-control__choice" data-testid="choice">
-                <span class="mcq-control__choice-label">{{ choiceLabels[i] }}</span>
-                {{ choice }}
+              <div class="choice-card" data-testid="choice">
+                <div class="choice-letter">
+                  {{ choiceLabels[i] }}
+                </div>
+                <div style="flex:1">
+                  <div class="choice-text">{{ choice }}</div>
+                  <div class="choice-pips">
+                    @for (pip of getPipsForChoice(i); track $index) {
+                      <div class="pip"></div>
+                    }
+                  </div>
+                </div>
               </div>
             }
           </div>
 
-          <button
-            class="btn btn--primary"
-            [disabled]="!gs.canCorrect() || isWaitingCorrection()"
-            (click)="onTriggerCorrection()"
-            data-testid="btn-trigger-correction"
-          >
-            Corriger
-          </button>
+          <!-- Corriger button -->
+          <div>
+            <button
+              class="btn-corriger"
+              [class.active]="gs.canCorrect() && !isWaitingCorrection()"
+              [disabled]="!gs.canCorrect() || isWaitingCorrection()"
+              (click)="onTriggerCorrection()"
+              data-testid="btn-trigger-correction"
+            >
+              Corriger
+            </button>
+            <div class="text-muted" style="font-size:11px;text-align:center;margin-top:6px">
+              @if (!gs.canCorrect()) {
+                Le bouton s'active quand tous ont r&eacute;pondu ou le chrono expire
+              }
+            </div>
+          </div>
         </div>
       }
 
-      <!-- QUESTION_CLOSED state -->
+      <!-- QUESTION_CLOSED state: correction results + next -->
       @if (gs.status() === 'QUESTION_CLOSED') {
-        <div class="mcq-control__closed-phase" data-testid="closed-phase">
-          <div class="mcq-control__question-info">
-            <span class="mcq-control__question-number" data-testid="question-number">
-              Question {{ (gs.state().questionIndex ?? 0) + 1 }}
-              @if (gs.state().totalQuestions) {
-                / {{ gs.state().totalQuestions }}
-              }
-            </span>
+        <div data-testid="closed-phase" class="flex-col gap-4">
+          <!-- Timer frozen at 0 -->
+          <div class="timer-block">
+            <div class="flex items-center gap-2">
+              <div class="timer-val-closed">0</div>
+              <span class="timer-label">secondes — temps &eacute;coul&eacute;</span>
+            </div>
+            <div class="timer-bar-track">
+              <div class="timer-bar-empty"></div>
+            </div>
           </div>
-          <h2 class="mcq-control__question-title" data-testid="question-title">
-            {{ gs.state().questionTitle }}
-          </h2>
 
-          <div class="mcq-control__choices" data-testid="choices">
+          <!-- Choices with correct/wrong -->
+          <div class="choices-grid" data-testid="choices">
             @for (choice of gs.state().choices; track $index; let i = $index) {
               <div
-                class="mcq-control__choice"
-                [class.mcq-control__choice--correct]="choice === lastCorrectAnswer()"
-                [class.mcq-control__choice--wrong]="choice !== lastCorrectAnswer()"
+                class="choice-card"
+                [class.correct-answer]="choice === lastCorrectAnswer()"
+                [class.wrong-answer]="choice !== lastCorrectAnswer()"
                 data-testid="choice-result"
               >
-                <span class="mcq-control__choice-label">{{ choiceLabels[i] }}</span>
-                {{ choice }}
+                <div class="choice-letter">
+                  {{ choiceLabels[i] }}
+                </div>
+                <div style="flex:1">
+                  <div class="choice-text">{{ choice }}</div>
+                  @if (choice === lastCorrectAnswer()) {
+                    <div class="correct-label">&#10003; Bonne r&eacute;ponse</div>
+                  }
+                  <div class="choice-pips">
+                    @for (pip of getPipsForChoice(i); track $index) {
+                      @if (choice === lastCorrectAnswer()) {
+                        <div class="pip-correct"></div>
+                      } @else {
+                        <div class="pip-wrong"></div>
+                      }
+                    }
+                  </div>
+                </div>
               </div>
             }
           </div>
 
+          <!-- Next question button -->
           <button
-            class="btn btn--primary"
+            class="btn-next"
             [disabled]="isWaitingNext()"
             (click)="onTriggerNext()"
             data-testid="btn-next-question"
@@ -126,22 +175,7 @@ import { GameStateService } from '../../../core/services/game-state.service';
       }
     </div>
   `,
-  styles: [`
-    .mcq-control { padding: 16px; }
-    .mcq-control__question-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .mcq-control__question-number { font-size: 0.9rem; color: #6c757d; font-weight: 600; }
-    .mcq-control__time-limit { font-size: 0.85rem; color: #6c757d; }
-    .mcq-control__question-title { margin: 0 0 16px; font-size: 1.25rem; }
-    .mcq-control__timer { font-size: 2rem; font-weight: 700; text-align: center; margin: 16px 0; color: #0d6efd; }
-    .mcq-control__choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-    .mcq-control__choice { padding: 12px 16px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 0.95rem; }
-    .mcq-control__choice-label { font-weight: 700; margin-right: 8px; }
-    .mcq-control__choice--correct { border-color: #28a745; background: #d4edda; }
-    .mcq-control__choice--wrong { border-color: #dee2e6; background: #f8f9fa; color: #6c757d; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; width: 100%; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { background: #6c757d; cursor: not-allowed; }
-  `],
+  styles: [],
 })
 export class McqControlComponent implements OnInit, OnDestroy {
   protected readonly gs = inject(GameStateService);
@@ -163,6 +197,19 @@ export class McqControlComponent implements OnInit, OnDestroy {
     if (results.length === 0) return null;
     return results[results.length - 1].correct_answer;
   });
+
+  protected readonly timerPercent = computed(() => {
+    const limit = this.gs.state().timeLimit ?? 30;
+    return limit > 0 ? (this.remainingSeconds() / limit) * 100 : 0;
+  });
+
+  protected getPipsForChoice(choiceIndex: number): number[] {
+    const choice = this.choiceLabels[choiceIndex];
+    const answers = this.gs.state().playerAnswers.filter(
+      (a) => a.choice === choice
+    );
+    return new Array(answers.length);
+  }
 
   ngOnInit(): void {
     this.startTimerIfNeeded();

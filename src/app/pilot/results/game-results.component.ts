@@ -26,113 +26,151 @@ export interface ResultsData {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="results" data-testid="game-results">
+    <div data-testid="game-results">
       @if (isLoading()) {
-        <div class="results__loading" data-testid="loading">Chargement des résultats...</div>
+        <div data-testid="loading">Chargement des résultats...</div>
       } @else if (results()) {
-        <!-- Podium -->
-        <section class="results__podium" data-testid="podium">
-          <h2>Podium</h2>
-          <div class="podium">
-            @for (entry of podium(); track entry.rank) {
-              <div
-                class="podium__entry"
-                [class.podium__entry--gold]="entry.rank === 1"
-                [class.podium__entry--silver]="entry.rank === 2"
-                [class.podium__entry--bronze]="entry.rank === 3"
-                data-testid="podium-entry"
-              >
-                <span class="podium__medal" data-testid="podium-medal">
-                  @if (entry.rank === 1) { 🥇 }
-                  @else if (entry.rank === 2) { 🥈 }
-                  @else if (entry.rank === 3) { 🥉 }
-                </span>
-                <span class="podium__name">{{ entry.participant_name }}</span>
-                <span class="podium__score">{{ entry.cumulative_score }} pts</span>
-                <span class="podium__time">{{ formatTime(entry.total_time_ms) }}</span>
+
+        <!-- Page header -->
+        <div class="page-header">
+          <div class="page-header-left">
+            <div class="page-title">Résultats</div>
+          </div>
+          <div class="page-actions">
+            <button
+              class="btn-primary"
+              (click)="onNewGame()"
+              [disabled]="gs.isActive()"
+              data-testid="btn-new-game"
+            >
+              Nouvelle partie
+            </button>
+            <button class="btn-ghost" data-testid="btn-all-games">Toutes les parties</button>
+          </div>
+        </div>
+
+        <!-- Podium [CA-44] -->
+        <section class="podium-section" data-testid="podium">
+          <div class="podium-section-title">Classement final</div>
+          <div class="podium-stage">
+            <!-- 2nd place (left column) -->
+            @if (podiumByRank()[2]; as entry) {
+              <div class="podium-col">
+                <div class="podium-avatar silver" data-testid="podium-entry">
+                  {{ entry.participant_name.charAt(0) }}
+                </div>
+                <div class="podium-name">{{ entry.participant_name }}</div>
+                <div class="podium-score silver">{{ entry.cumulative_score }}</div>
+                <div class="podium-time">{{ formatTime(entry.total_time_ms) }} cumulé</div>
+                <div class="podium-step silver" data-testid="podium-medal">2</div>
+              </div>
+            }
+            <!-- 1st place (center column) -->
+            @if (podiumByRank()[1]; as entry) {
+              <div class="podium-col">
+                <div class="podium-avatar gold" data-testid="podium-entry">
+                  {{ entry.participant_name.charAt(0) }}
+                </div>
+                <div class="podium-name">{{ entry.participant_name }}</div>
+                <div class="podium-score gold">{{ entry.cumulative_score }}</div>
+                <div class="podium-time">{{ formatTime(entry.total_time_ms) }} cumulé</div>
+                <div class="podium-step gold" data-testid="podium-medal">1</div>
+              </div>
+            }
+            <!-- 3rd place (right column) -->
+            @if (podiumByRank()[3]; as entry) {
+              <div class="podium-col">
+                <div class="podium-avatar bronze" data-testid="podium-entry">
+                  {{ entry.participant_name.charAt(0) }}
+                </div>
+                <div class="podium-name">{{ entry.participant_name }}</div>
+                <div class="podium-score bronze">{{ entry.cumulative_score }}</div>
+                <div class="podium-time">{{ formatTime(entry.total_time_ms) }} cumulé</div>
+                <div class="podium-step bronze" data-testid="podium-medal">3</div>
               </div>
             }
           </div>
+
+          <!-- Ranks beyond podium -->
+          @for (entry of restRankings(); track entry.rank) {
+            <div class="fourth-row">
+              <div class="fourth-rank">{{ entry.rank }}</div>
+              <div class="fourth-name">{{ entry.participant_name }}</div>
+              <div class="fourth-score">{{ entry.cumulative_score }} pts</div>
+              <div class="fourth-time">{{ formatTime(entry.total_time_ms) }}</div>
+            </div>
+          }
         </section>
 
-        <!-- Detail table -->
+        <!-- Detail table [CA-45, CA-46] -->
         @if (results()!.questionResults.length > 0) {
-          <section class="results__detail" data-testid="detail-section">
-            <h2>Détail par question</h2>
-            <div class="results__table-wrapper">
-              <table class="detail-table" data-testid="detail-table">
-                <thead>
-                  <tr>
-                    <th>Question</th>
-                    @for (name of results()!.participantNames; track name) {
-                      <th>{{ name }}</th>
-                    }
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (qr of results()!.questionResults; track qr.question_index) {
-                    <tr data-testid="detail-row">
-                      <td>Q{{ qr.question_index + 1 }} ({{ qr.question_type }})</td>
-                      @for (name of results()!.participantNames; track name) {
-                        <td
-                          [class.detail-table__cell--correct]="getCellStatus(qr, name) === 'correct'"
-                          [class.detail-table__cell--wrong]="getCellStatus(qr, name) === 'wrong'"
-                          [class.detail-table__cell--absent]="getCellStatus(qr, name) === 'absent'"
-                          data-testid="detail-cell"
-                        >
-                          {{ getCellLabel(qr, name) }}
-                        </td>
-                      }
-                    </tr>
-                  }
-                </tbody>
-              </table>
+          <section class="detail-section" data-testid="detail-section">
+            <div class="detail-header">
+              <span class="detail-title">Détail par question</span>
+            </div>
+
+            <!-- Column headers -->
+            <div class="table-head" [style.grid-template-columns]="gridColumns()">
+              <div class="th">Q</div>
+              <div class="th">Type</div>
+              @for (name of results()!.participantNames; track name) {
+                <div class="th player">{{ name }}</div>
+              }
+            </div>
+
+            <!-- Question rows -->
+            @for (qr of results()!.questionResults; track qr.question_index) {
+              <div class="table-row" [style.grid-template-columns]="gridColumns()" data-testid="detail-row">
+                <div class="td-q">Q{{ qr.question_index + 1 }}</div>
+                <div class="td-type">
+                  <span
+                    class="type-chip"
+                    [class.type-mcq]="qr.question_type === 'MCQ'"
+                    [class.type-speed]="qr.question_type !== 'MCQ'"
+                  >
+                    {{ qr.question_type === 'MCQ' ? 'MCQ' : 'SPD' }}
+                  </span>
+                </div>
+                @for (name of results()!.participantNames; track name) {
+                  <div class="td-cell" data-testid="detail-cell">
+                    <div
+                      class="cell"
+                      [class.cell-correct]="getCellStatus(qr, name) === 'correct'"
+                      [class.cell-wrong]="getCellStatus(qr, name) === 'wrong'"
+                      [class.cell-absent]="getCellStatus(qr, name) === 'absent'"
+                      [class.cell-dash]="getCellStatus(qr, name) === 'dash'"
+                    >
+                      {{ getCellLabel(qr, name) }}
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Totals row -->
+            <div class="table-totals" [style.grid-template-columns]="gridColumns()">
+              <div class="total-label">Score final</div>
+              @for (name of results()!.participantNames; track name) {
+                <div
+                  class="total-score"
+                  [class.gold]="getRankForName(name) === 1"
+                  [class.silver]="getRankForName(name) === 2"
+                  [class.bronze]="getRankForName(name) === 3"
+                  [class.other]="getRankForName(name) > 3"
+                >
+                  {{ getScoreForName(name) }}
+                </div>
+              }
             </div>
           </section>
         }
 
-        <!-- Actions -->
-        <div class="results__actions" data-testid="results-actions">
-          <button
-            class="btn btn--primary"
-            (click)="onNewGame()"
-            [disabled]="gs.isActive()"
-            data-testid="btn-new-game"
-          >
-            Nouvelle partie
-          </button>
-        </div>
+        <!-- Actions (kept for backwards compat) -->
+        <div data-testid="results-actions"></div>
       }
     </div>
   `,
-  styles: [`
-    .results { padding: 24px; max-width: 900px; margin: 0 auto; }
-    .results__loading { text-align: center; padding: 48px; color: #6c757d; }
-    .results__podium { margin-bottom: 32px; }
-    .results__podium h2 { font-size: 1.25rem; margin: 0 0 16px; }
-    .podium { display: flex; gap: 16px; justify-content: center; }
-    .podium__entry { display: flex; flex-direction: column; align-items: center; padding: 20px 24px; border-radius: 12px; border: 2px solid #dee2e6; min-width: 150px; }
-    .podium__entry--gold { border-color: #ffd700; background: #fffde7; }
-    .podium__entry--silver { border-color: #c0c0c0; background: #fafafa; }
-    .podium__entry--bronze { border-color: #cd7f32; background: #fff8e1; }
-    .podium__medal { font-size: 2rem; }
-    .podium__name { font-size: 1.1rem; font-weight: 600; margin: 4px 0; }
-    .podium__score { font-size: 0.95rem; font-weight: 600; color: #0d6efd; }
-    .podium__time { font-size: 0.8rem; color: #6c757d; }
-    .results__detail { margin-bottom: 24px; }
-    .results__detail h2 { font-size: 1.25rem; margin: 0 0 16px; }
-    .results__table-wrapper { overflow-x: auto; }
-    .detail-table { width: 100%; border-collapse: collapse; }
-    .detail-table th, .detail-table td { padding: 8px 12px; border: 1px solid #dee2e6; text-align: center; font-size: 0.85rem; }
-    .detail-table th { background: #f8f9fa; font-weight: 600; }
-    .detail-table__cell--correct { background: #d4edda; color: #155724; }
-    .detail-table__cell--wrong { background: #f8d7da; color: #721c24; }
-    .detail-table__cell--absent { background: #f8f9fa; color: #adb5bd; }
-    .results__actions { margin-top: 24px; text-align: center; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
-    .btn--primary { background: #0d6efd; color: #fff; }
-    .btn--primary:disabled { background: #6c757d; cursor: not-allowed; }
-  `],
+  styles: [],
 })
 export class GameResultsComponent {
   protected readonly gs = inject(GameStateService);
@@ -148,6 +186,28 @@ export class GameResultsComponent {
     const data = this.results();
     if (!data) return [];
     return data.rankings.filter((r) => r.rank <= 3);
+  });
+
+  protected readonly podiumByRank = computed(() => {
+    const entries = this.podium();
+    const map: Record<number, RankingEntry> = {};
+    for (const e of entries) {
+      map[e.rank] = e;
+    }
+    return map;
+  });
+
+  protected readonly restRankings = computed(() => {
+    const data = this.results();
+    if (!data) return [];
+    return data.rankings.filter((r) => r.rank > 3);
+  });
+
+  protected readonly gridColumns = computed(() => {
+    const data = this.results();
+    if (!data) return '52px 56px';
+    const playerCols = data.participantNames.map(() => '1fr').join(' ');
+    return `52px 56px ${playerCols}`;
   });
 
   constructor() {
@@ -170,7 +230,7 @@ export class GameResultsComponent {
       return result.correct ? 'correct' : 'wrong';
     } else {
       const results = qr.results as SpeedPlayerResult[];
-      if (results.length === 0) return 'absent';
+      if (results.length === 0) return 'dash';
       const result = results.find((r) => r.participant_name === participantName);
       if (!result) return 'absent';
       return result.winner ? 'correct' : 'wrong';
@@ -198,6 +258,20 @@ export class GameResultsComponent {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  protected getRankForName(name: string): number {
+    const data = this.results();
+    if (!data) return 999;
+    const entry = data.rankings.find((r) => r.participant_name === name);
+    return entry ? entry.rank : 999;
+  }
+
+  protected getScoreForName(name: string): number {
+    const data = this.results();
+    if (!data) return 0;
+    const entry = data.rankings.find((r) => r.participant_name === name);
+    return entry ? entry.cumulative_score : 0;
   }
 
   protected onNewGame(): void {
