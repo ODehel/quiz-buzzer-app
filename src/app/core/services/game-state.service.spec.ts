@@ -23,6 +23,8 @@ import type {
   AllAnsweredMessage,
   BuzzLockedMessage,
   BuzzUnlockedMessage,
+  BuzzerConnectedMessage,
+  BuzzerDisconnectedMessage,
   QuestionResultSummaryMessage,
   IntermediateRankingMessage,
   RankingEntry,
@@ -428,6 +430,37 @@ describe('GameStateService', () => {
       httpMock.expectNone(`${environment.serverUrl}/api/v1/games`);
     });
 
+    it('auth_success with role buzzer adds buzzer to connectedBuzzers', () => {
+      service.dispatch({
+        type: 'auth_success',
+        role: 'buzzer',
+        username: 'quiz_buzzer_01',
+        expires_in: 3600,
+      } as AuthSuccessMessage);
+
+      expect(service.connectedBuzzers()).toEqual(['quiz_buzzer_01']);
+    });
+
+    it('auth_success with role admin does not add to connectedBuzzers', async () => {
+      jest.useFakeTimers();
+      service.dispatch({
+        type: 'auth_success',
+        role: 'admin',
+        username: 'admin',
+        expires_in: 3600,
+      } as AuthSuccessMessage);
+
+      expect(service.connectedBuzzers()).toEqual([]);
+      // Should start sync timeout instead (admin behavior)
+      jest.advanceTimersByTime(2000);
+      jest.useRealTimers();
+
+      await Promise.resolve();
+
+      const req = httpMock.expectOne(`${environment.serverUrl}/api/v1/games`);
+      req.flush({ data: [], page: 1, limit: 20, total: 0, total_pages: 0 });
+    });
+
     it('preserves questionResults across reconnection', () => {
       // First, add a question result
       const resultMsg: QuestionResultSummaryMessage = {
@@ -711,6 +744,47 @@ describe('GameStateService', () => {
       } as BuzzUnlockedMessage);
 
       expect(service.state().invalidatedPlayers).toEqual(['Alice', 'Bob']);
+    });
+  });
+
+  describe('dispatch() — buzzer_connected', () => {
+    it('adds a new buzzer to connectedBuzzers', () => {
+      service.dispatch({
+        type: 'buzzer_connected',
+        username: 'buzzer-1',
+      } as BuzzerConnectedMessage);
+
+      expect(service.connectedBuzzers()).toEqual(['buzzer-1']);
+    });
+
+    it('accumulates multiple connected buzzers', () => {
+      service.dispatch({ type: 'buzzer_connected', username: 'buzzer-1' } as BuzzerConnectedMessage);
+      service.dispatch({ type: 'buzzer_connected', username: 'buzzer-2' } as BuzzerConnectedMessage);
+
+      expect(service.connectedBuzzers()).toEqual(['buzzer-1', 'buzzer-2']);
+    });
+
+    it('does not duplicate an already connected buzzer', () => {
+      service.dispatch({ type: 'buzzer_connected', username: 'buzzer-1' } as BuzzerConnectedMessage);
+      service.dispatch({ type: 'buzzer_connected', username: 'buzzer-1' } as BuzzerConnectedMessage);
+
+      expect(service.connectedBuzzers()).toEqual(['buzzer-1']);
+    });
+  });
+
+  describe('dispatch() — buzzer_disconnected', () => {
+    it('removes a buzzer from connectedBuzzers', () => {
+      service.dispatch({ type: 'buzzer_connected', username: 'buzzer-1' } as BuzzerConnectedMessage);
+      service.dispatch({ type: 'buzzer_connected', username: 'buzzer-2' } as BuzzerConnectedMessage);
+      service.dispatch({ type: 'buzzer_disconnected', username: 'buzzer-1' } as BuzzerDisconnectedMessage);
+
+      expect(service.connectedBuzzers()).toEqual(['buzzer-2']);
+    });
+
+    it('does nothing if buzzer was not connected', () => {
+      service.dispatch({ type: 'buzzer_disconnected', username: 'buzzer-unknown' } as BuzzerDisconnectedMessage);
+
+      expect(service.connectedBuzzers()).toEqual([]);
     });
   });
 

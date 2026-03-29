@@ -12,6 +12,7 @@ import type {
   ParticipantState,
   RankingEntry,
   InboundMessage,
+  AuthSuccessMessage,
   GameStateSyncMessage,
   QuestionTitleMessage,
   QuestionChoicesMessage,
@@ -20,6 +21,8 @@ import type {
   PlayerAnsweredMessage,
   BuzzLockedMessage,
   BuzzUnlockedMessage,
+  BuzzerConnectedMessage,
+  BuzzerDisconnectedMessage,
   QuestionResultSummaryMessage,
   IntermediateRankingMessage,
   McqPlayerResult,
@@ -198,9 +201,15 @@ export class GameStateService {
 
   dispatch(msg: InboundMessage): void {
     switch (msg.type) {
-      case 'auth_success':
-        this.startSyncTimeout();
+      case 'auth_success': {
+        const authMsg = msg as AuthSuccessMessage;
+        if (authMsg.role === 'buzzer' && authMsg.username) {
+          this.addBuzzer(authMsg.username);
+        } else {
+          this.startSyncTimeout();
+        }
         break;
+      }
       case 'game_state_sync':
         this.clearSyncTimeout();
         this.handleGameStateSync(msg as GameStateSyncMessage);
@@ -231,6 +240,12 @@ export class GameStateService {
         break;
       case 'buzz_unlocked':
         this.handleBuzzUnlocked(msg as BuzzUnlockedMessage);
+        break;
+      case 'buzzer_connected':
+        this.addBuzzer((msg as BuzzerConnectedMessage).username);
+        break;
+      case 'buzzer_disconnected':
+        this.removeBuzzer((msg as BuzzerDisconnectedMessage).username);
         break;
       case 'question_result_summary':
         this.handleQuestionResultSummary(msg as QuestionResultSummaryMessage);
@@ -353,6 +368,22 @@ export class GameStateService {
 
   private handleAllAnswered(): void {
     this._state.update((s) => ({ ...s, allAnswered: true }));
+  }
+
+  private addBuzzer(username: string): void {
+    this._state.update((s) => ({
+      ...s,
+      connectedBuzzers: s.connectedBuzzers.includes(username)
+        ? s.connectedBuzzers
+        : [...s.connectedBuzzers, username],
+    }));
+  }
+
+  private removeBuzzer(username: string): void {
+    this._state.update((s) => ({
+      ...s,
+      connectedBuzzers: s.connectedBuzzers.filter((b) => b !== username),
+    }));
   }
 
   private handleBuzzLocked(msg: BuzzLockedMessage): void {
