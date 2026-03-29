@@ -868,6 +868,13 @@ code, pre {
   gap: 14px;
 }
 
+/* Grille quiz */
+.quiz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
 /* Card quiz */
 .quiz-card {
   background: var(--surface);
@@ -900,6 +907,7 @@ code, pre {
 }
 .card-action-btn:first-child { border-right: 1px solid var(--border); }
 .card-action-btn:hover { background: var(--surface2); color: var(--text); }
+.card-action-btn svg { width: 13px; height: 13px; fill: currentColor; }
 .card-action-btn.danger:hover { background: #1a0808; color: var(--red); }
 
 /* Panel (compositeur) */
