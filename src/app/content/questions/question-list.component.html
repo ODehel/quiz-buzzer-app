@@ -63,14 +63,14 @@
     <label class="filter-label">Points (plage)</label>
     <div class="filter-range">
       <input
-        type="number" class="filter-input" min="50" max="500" step="50" placeholder="50"
+        type="number" class="filter-input" min="1" max="50" step="1" placeholder="1"
         [ngModel]="filterPointsMin()"
         (ngModelChange)="onFilterChange('points_min', $event)"
         data-testid="filter-points-min"
       />
       <span class="filter-range-sep">-</span>
       <input
-        type="number" class="filter-input" min="50" max="500" step="50" placeholder="500"
+        type="number" class="filter-input" min="1" max="50" step="1" placeholder="50"
         [ngModel]="filterPointsMax()"
         (ngModelChange)="onFilterChange('points_max', $event)"
         [class.error]="pointsRangeInvalid()"
