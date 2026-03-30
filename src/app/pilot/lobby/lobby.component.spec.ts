@@ -183,7 +183,7 @@ describe('LobbyComponent', () => {
     createComponent(['buzzer-1']);
 
     const label = fixture.nativeElement.querySelector('[data-testid="readiness-label"]');
-    expect(label.textContent).toContain('1 / 3 buzzers connectes');
+    expect(label.textContent).toContain('1 / 3 buzzers connectés');
   });
 
   // ── CA-8: Real-time update (simulated via signal change) ──
@@ -222,8 +222,8 @@ describe('LobbyComponent', () => {
 
     const statuses = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-status"]');
     expect(statuses[0].textContent.trim()).toBe('buzzer-1');
-    expect(statuses[1].textContent.trim()).toBe('Non connecte');
-    expect(statuses[2].textContent.trim()).toBe('Non connecte');
+    expect(statuses[1].textContent.trim()).toBe('Non connecté');
+    expect(statuses[2].textContent.trim()).toBe('Non connecté');
 
     expect(statuses[1].classList.contains('offline')).toBe(true);
   });
@@ -425,7 +425,7 @@ describe('LobbyComponent', () => {
 
     // Buzzers updated
     const label = fixture.nativeElement.querySelector('[data-testid="readiness-label"]');
-    expect(label.textContent).toContain('2 / 3 buzzers connectes');
+    expect(label.textContent).toContain('2 / 3 buzzers connectés');
   });
 
   // ── CA-24: game_state_sync with OPEN triggers navigation ──
