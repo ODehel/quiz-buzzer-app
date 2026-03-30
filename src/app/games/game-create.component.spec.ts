@@ -156,7 +156,8 @@ describe('GameCreateComponent', () => {
 
     const preview = fixture.nativeElement.querySelector('[data-testid="quiz-preview"]');
     expect(preview).toBeTruthy();
-    expect(preview.textContent).toContain('5 questions');
+    expect(preview.textContent).toContain('questions');
+    expect(preview.querySelector('.preview-stat-val')?.textContent?.trim()).toBe('5');
   }));
 
   it('CA-17 — displays empty message when no quizzes available', () => {

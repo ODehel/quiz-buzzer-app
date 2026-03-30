@@ -49,7 +49,7 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
           <!-- Left column -->
           <div>
 
-            <!-- Quiz selection card -->
+            <!-- Quiz selection card [CA-15, CA-16] -->
             <div class="card">
               <div class="card-header">
                 <span class="card-title">Quiz</span>
@@ -57,7 +57,9 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
               <div class="card-body">
 
                 <div class="field">
-                  <label class="field-label" for="quiz-select">Sélectionner un quiz</label>
+                  <label class="field-label" for="quiz-select">
+                    Sélectionner un quiz <span class="required">*</span>
+                  </label>
                   <select
                     id="quiz-select"
                     class="field-select"
@@ -83,15 +85,51 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
                         <span class="preview-stat-val">{{ quizPreview()!.question_ids.length }}</span>
                         <span class="preview-stat-lbl">questions</span>
                       </div>
+                      @if (estimatedMinutes()) {
+                        <div class="preview-stat">
+                          <span class="preview-stat-val" style="color:var(--green)">~{{ estimatedMinutes() }}</span>
+                          <span class="preview-stat-lbl">min estimées</span>
+                        </div>
+                      }
                     </div>
-                    <div class="field-hint">{{ previewSummary() }}</div>
+                    @if (mcqCount() > 0 || speedCount() > 0) {
+                      <div class="preview-types">
+                        @if (mcqCount() > 0) {
+                          <div class="preview-type-chip chip-mcq">
+                            <div class="chip-dot"></div>
+                            {{ mcqCount() }} MCQ
+                          </div>
+                        }
+                        @if (speedCount() > 0) {
+                          <div class="preview-type-chip chip-speed">
+                            <div class="chip-dot"></div>
+                            {{ speedCount() }} SPEED
+                          </div>
+                        }
+                      </div>
+                    }
+                    @if (minLevel() !== null && maxLevel() !== null) {
+                      <div class="preview-levels">
+                        <span>Niveaux :</span>
+                        <div class="level-range">
+                          @for (lvl of levelRange; track lvl) {
+                            <div class="lvl-badge"
+                              [class.active-min]="lvl === minLevel()"
+                              [class.active-max]="lvl === maxLevel()">
+                              {{ lvl }}
+                            </div>
+                          }
+                        </div>
+                        <span style="font-size:11px">min {{ minLevel() }} → max {{ maxLevel() }}</span>
+                      </div>
+                    }
                   </div>
                 }
 
               </div>
             </div>
 
-            <!-- Participants card -->
+            <!-- Participants card [CA-18 à CA-22] -->
             <div class="card">
               <div class="card-header">
                 <span class="card-title">Participants</span>
@@ -118,11 +156,11 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
                         />
                         <button
                           type="button"
-                          class="btn-icon btn-remove-p"
+                          class="btn-remove-p"
                           (click)="onRemoveParticipant(i)"
                           [disabled]="participants().length <= 1"
                           data-testid="btn-remove-participant"
-                          title="Retirer ce participant"
+                          [title]="participants().length <= 1 ? 'Au moins 1 participant requis' : 'Retirer ce participant'"
                         >
                           &times;
                         </button>
@@ -155,15 +193,15 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
           <!-- Right column (sidebar) -->
           <div class="sidebar-right">
 
-            <!-- Actions card -->
+            <!-- Actions card [CA-23, CA-24, CA-25] -->
             <div class="card">
               <div class="card-header">
                 <span class="card-title">Lancer</span>
               </div>
-              <div class="card-body">
+              <div class="card-body" style="gap:10px">
                 <button
                   type="submit"
-                  class="btn-primary"
+                  class="btn-primary btn-primary--lg"
                   [disabled]="!isValid() || isSubmitting()"
                   data-testid="btn-submit"
                 >
@@ -173,9 +211,15 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
                     ▶ Créer la partie
                   }
                 </button>
-                <a routerLink="/games" class="btn-ghost" data-testid="btn-back">
+                <button type="button" class="btn-ghost-full" routerLink="/games" data-testid="btn-back">
                   Annuler
-                </a>
+                </button>
+                @if (validationMessage()) {
+                  <div class="validation-hint">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    {{ validationMessage() }}
+                  </div>
+                }
               </div>
             </div>
 
@@ -186,17 +230,31 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
                   <span class="card-title">Récapitulatif</span>
                 </div>
                 <div class="card-body recap-body">
-                  <div class="recap-row">
-                    <span class="recap-label">Quiz</span>
-                    <span class="recap-value">{{ quizPreview()!.name }}</span>
+                  <div class="recap-rows">
+                    <div class="recap-row">
+                      <span class="recap-label">Quiz</span>
+                      <span class="recap-value">{{ quizPreview()!.name }}</span>
+                    </div>
+                    <div class="recap-row">
+                      <span class="recap-label">Questions</span>
+                      <span>{{ quizPreview()!.question_ids.length }}@if (mcqCount() > 0 || speedCount() > 0) {
+                        <span> ({{ mcqCount() }} MCQ · {{ speedCount() }} SPEED)</span>
+                      }</span>
+                    </div>
+                    <div class="recap-row">
+                      <span class="recap-label">Participants</span>
+                      <span>{{ participants().length }} joueurs</span>
+                    </div>
+                    @if (estimatedMinutes()) {
+                      <div class="recap-row">
+                        <span class="recap-label">Durée estimée</span>
+                        <span>~{{ estimatedMinutes() }} minutes</span>
+                      </div>
+                    }
                   </div>
-                  <div class="recap-row">
-                    <span class="recap-label">Questions</span>
-                    <span>{{ quizPreview()!.question_ids.length }}</span>
-                  </div>
-                  <div class="recap-row">
-                    <span class="recap-label">Participants</span>
-                    <span>{{ participants().length }} joueurs</span>
+                  <div class="recap-divider"></div>
+                  <div class="recap-hint">
+                    Après création, vous serez redirigé vers le lobby pour attendre la connexion des buzzers.
                   </div>
                 </div>
               </div>
@@ -211,6 +269,7 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
     @if (toastMessage()) {
       <div class="toast-error" [class.toast--success]="!toastIsError()" data-testid="toast">
         <div class="toast-error-header">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           {{ toastMessage() }}
         </div>
         @if (showResumeLink()) {
@@ -241,6 +300,8 @@ export class GameCreateComponent {
   protected readonly toastIsError = signal(false);
   protected readonly showResumeLink = signal(false);
 
+  protected readonly levelRange = [1, 2, 3, 4, 5];
+
   protected readonly isValid = computed(() => {
     const ps = this.participants();
     if (this.selectedQuizId() === null) return false;
@@ -251,11 +312,59 @@ export class GameCreateComponent {
     return true;
   });
 
-  protected readonly previewSummary = computed(() => {
+  /** Selected quiz from the list (has question_summary) */
+  private readonly selectedQuiz = computed(() => {
+    const id = this.selectedQuizId();
+    if (!id) return null;
+    return this.quizzes().find((q) => q.id === id) ?? null;
+  });
+
+  protected readonly mcqCount = computed(() => {
+    const quiz = this.selectedQuiz();
+    if (!quiz?.question_summary?.by_level) return 0;
+    return Object.values(quiz.question_summary.by_level).reduce(
+      (sum, types) => sum + (types['MCQ'] ?? 0), 0
+    );
+  });
+
+  protected readonly speedCount = computed(() => {
+    const quiz = this.selectedQuiz();
+    if (!quiz?.question_summary?.by_level) return 0;
+    return Object.values(quiz.question_summary.by_level).reduce(
+      (sum, types) => sum + (types['SPEED'] ?? 0), 0
+    );
+  });
+
+  protected readonly minLevel = computed(() => {
+    const quiz = this.selectedQuiz();
+    if (!quiz?.question_summary?.by_level) return null;
+    const levels = Object.keys(quiz.question_summary.by_level).map(Number).filter((n) => !isNaN(n));
+    return levels.length > 0 ? Math.min(...levels) : null;
+  });
+
+  protected readonly maxLevel = computed(() => {
+    const quiz = this.selectedQuiz();
+    if (!quiz?.question_summary?.by_level) return null;
+    const levels = Object.keys(quiz.question_summary.by_level).map(Number).filter((n) => !isNaN(n));
+    return levels.length > 0 ? Math.max(...levels) : null;
+  });
+
+  protected readonly estimatedMinutes = computed(() => {
     const preview = this.quizPreview();
-    if (!preview) return '';
-    // QuizDetail doesn't have question_summary, so we just show question count
-    return `${preview.question_ids.length} questions`;
+    if (!preview) return null;
+    // ~25s per question on average
+    const mins = Math.round(preview.question_ids.length * 25 / 60);
+    return mins > 0 ? mins : 1;
+  });
+
+  protected readonly validationMessage = computed(() => {
+    if (this.selectedQuizId() === null) return 'Sélectionnez un quiz pour continuer.';
+    const ps = this.participants();
+    if (ps.some((p) => p.trim().length === 0)) return 'Tous les noms doivent être renseignés.';
+    const lower = ps.map((p) => p.trim().toLowerCase());
+    if (new Set(lower).size !== lower.length) return 'Deux participants portent le même nom.';
+    if (!ps.every((p) => p.trim().length <= 50)) return 'Un nom dépasse 50 caractères.';
+    return null;
   });
 
   constructor() {

@@ -1406,6 +1406,86 @@ input[type="range"]::-webkit-slider-thumb {
 .sidebar-right { display: flex; flex-direction: column; gap: 16px; }
 .form-actions { display: flex; flex-direction: column; gap: 8px; }
 
+/* ── Colonne gauche — espacement entre cards ── */
+.form-grid > div:first-child > .card + .card { margin-top: 16px; }
+
+/* ── Compteur dans card-header (ex. participants N/10) ── */
+.card-counter { font-size: 12px; color: var(--muted); }
+.card-counter strong { color: var(--text); }
+
+/* ── Aperçu quiz [CA-16] ── */
+.quiz-preview {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.preview-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+.preview-stats { display: flex; gap: 16px; }
+.preview-stat { display: flex; flex-direction: column; gap: 2px; }
+.preview-stat-val { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--accent); line-height: 1; }
+.preview-stat-lbl { font-size: 11px; color: var(--muted); }
+.preview-types { display: flex; gap: 8px; }
+.preview-type-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px;
+  font-size: 11px; font-weight: 600;
+}
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+.chip-mcq   { color: #7eb3ff; } .chip-mcq   .chip-dot { background: #7eb3ff; }
+.chip-speed { color: #c084fc; } .chip-speed .chip-dot { background: #c084fc; }
+.preview-levels { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.level-range { display: flex; gap: 4px; }
+.lvl-badge {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--text);
+}
+.lvl-badge.active-min { background: var(--green-dim); border-color: #4ade80; color: #4ade80; }
+.lvl-badge.active-max { background: var(--red-dim); border-color: #f87171; color: #f87171; }
+
+/* ── Participants [CA-18 à CA-22] ── */
+.participants-list { display: flex; flex-direction: column; gap: 8px; }
+.participant-row { display: flex; align-items: center; gap: 8px; }
+.participant-num {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  width: 16px; text-align: right; flex-shrink: 0;
+}
+.btn-remove-p {
+  width: 26px; height: 26px; border-radius: 6px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all var(--transition);
+}
+.btn-remove-p:hover { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+.btn-remove-p:disabled { opacity: .3; cursor: not-allowed; }
+.btn-remove-p:disabled:hover { background: transparent; border-color: var(--border); color: var(--muted); }
+
+/* ── Récapitulatif (sidebar droite) ── */
+.recap-body { gap: 10px; }
+.recap-rows { display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+.recap-row { display: flex; justify-content: space-between; }
+.recap-label { color: var(--muted); }
+.recap-value { font-weight: 500; }
+.recap-divider { height: 1px; background: var(--border); }
+.recap-hint { font-size: 11px; color: var(--muted); }
+
+/* ── Validation hint dans sidebar Actions ── */
+.validation-hint {
+  font-size: 11px; color: var(--red);
+  display: flex; align-items: center; gap: 5px;
+}
+.validation-hint svg { width: 12px; height: 12px; fill: var(--red); flex-shrink: 0; }
+
 /* Zones médias [CA-33] */
 .media-zone {
   border: 2px dashed var(--border);
