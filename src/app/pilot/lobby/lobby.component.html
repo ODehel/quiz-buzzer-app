@@ -120,14 +120,14 @@
 
 </div>
 
-@if (toastMessage()) {
+@if (toast.message()) {
   <div
     class="toast"
-    [class.toast--error]="toastIsError()"
-    [class.toast--success]="!toastIsError()"
+    [class.toast--error]="toast.isError()"
+    [class.toast--success]="!toast.isError()"
     data-testid="toast"
   >
-    {{ toastMessage() }}
+    {{ toast.message() }}
   </div>
 }
 

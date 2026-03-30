@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { PlayComponent } from './play.component';
 import { GameStateService } from '../../core/services/game-state.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SoundService } from '../../content/sounds/sound.service';
 import type { InboundMessage } from '../../core/models/websocket.models';
 import { of } from 'rxjs';
@@ -132,7 +133,7 @@ describe('PlayComponent', () => {
 
     messagesSubject.next({ type: 'error', code: 'ANSWERS_PENDING' } as any);
 
-    expect(component['toastMessage']()).toBe('Des joueurs n\'ont pas encore répondu');
+    expect(TestBed.inject(ToastService).message()).toBe('Des joueurs n\'ont pas encore répondu');
   });
 
   // CA-40: INVALID_STATE error shows toast
@@ -141,7 +142,7 @@ describe('PlayComponent', () => {
 
     messagesSubject.next({ type: 'error', code: 'INVALID_STATE' } as any);
 
-    expect(component['toastMessage']()).toBe('Classement indisponible dans cet état');
+    expect(TestBed.inject(ToastService).message()).toBe('Classement indisponible dans cet état');
   });
 
   // handleMessage — question_choices (no ViewChild in unit test, but path still executes)
@@ -226,10 +227,10 @@ describe('PlayComponent', () => {
     const component = createComponent('QUESTION_OPEN');
 
     messagesSubject.next({ type: 'error', code: 'ANSWERS_PENDING' } as any);
-    expect(component['toastMessage']()).not.toBeNull();
+    expect(TestBed.inject(ToastService).message()).not.toBeNull();
 
     jest.advanceTimersByTime(4000);
-    expect(component['toastMessage']()).toBeNull();
+    expect(TestBed.inject(ToastService).message()).toBeNull();
 
     jest.useRealTimers();
   });

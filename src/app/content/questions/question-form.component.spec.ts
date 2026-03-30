@@ -41,6 +41,7 @@ describe('QuestionFormComponent', () => {
     patch: jest.Mock;
     uploadMedia: jest.Mock;
     deleteMedia: jest.Mock;
+    getMediaUrl: jest.Mock;
   };
   let mockThemeService: { getAll: jest.Mock };
 
@@ -56,6 +57,7 @@ describe('QuestionFormComponent', () => {
         last_updated_at: '2026-01-01T00:00:00Z',
       }),
       deleteMedia: jest.fn().mockResolvedValue(undefined),
+      getMediaUrl: jest.fn().mockImplementation((path: string | null) => path),
     };
     mockThemeService = {
       getAll: jest.fn().mockReturnValue(of({ data: MOCK_THEMES, page: 1, limit: 100, total: MOCK_THEMES.length, total_pages: 1 })),

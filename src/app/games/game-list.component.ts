@@ -16,6 +16,7 @@ import { StatusBadgeComponent } from '../shared/status-badge/status-badge.compon
 import { PaginatorComponent } from '../shared/paginator/paginator.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 import type { Game } from '../core/models/game.models';
+import { ToastService } from '../core/services/toast.service';
 
 export interface GameRow extends Game {
   quizName: string;
@@ -35,6 +36,7 @@ export interface GameRow extends Game {
 })
 export class GameListComponent {
   private readonly gameService = inject(GameService);
+  protected readonly toast = inject(ToastService);
   private readonly quizService = inject(QuizService);
   private readonly gs = inject(GameStateService);
   private readonly router = inject(Router);
@@ -45,9 +47,6 @@ export class GameListComponent {
   protected readonly currentPage = signal(1);
   protected readonly totalPages = signal(1);
   protected readonly isLoading = signal(true);
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   private quizNameMap = new Map<string, string>();
   private readonly loadTrigger$ = new Subject<void>();
 
@@ -61,7 +60,7 @@ export class GameListComponent {
             .pipe(
               catchError(() => {
                 this.isLoading.set(false);
-                this.showToast('Erreur lors du chargement', true);
+                this.toast.show('Erreur lors du chargement', true);
                 return EMPTY;
               })
             );
@@ -86,14 +85,14 @@ export class GameListComponent {
         },
         error: () => {
           this.isLoading.set(false);
-          this.showToast('Erreur lors du chargement', true);
+          this.toast.show('Erreur lors du chargement', true);
         },
       });
   }
 
   protected onNewGameClick(): void {
     if (this.gs.isPiloting()) {
-      this.showToast('Une partie est déjà en cours', true);
+      this.toast.show('Une partie est déjà en cours', true);
       return;
     }
     this.router.navigate(['/games/new']);
@@ -112,10 +111,10 @@ export class GameListComponent {
 
     try {
       await this.gameService.delete(game.id);
-      this.showToast('Partie supprimée');
+      this.toast.show('Partie supprimée');
       this.loadTrigger$.next();
     } catch {
-      this.showToast('Erreur lors de la suppression', true);
+      this.toast.show('Erreur lors de la suppression', true);
     }
   }
 
@@ -156,11 +155,5 @@ export class GameListComponent {
     this.totalPages.set(response.total_pages);
     this.currentPage.set(response.page);
     this.isLoading.set(false);
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

@@ -9,15 +9,14 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of, catchError } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
 
 import { GameService } from '../games/game.service';
 import { QuizService } from '../content/quizzes/quiz.service';
 import { QuestionService } from '../content/questions/question.service';
 import { GameStateService } from '../core/services/game-state.service';
+import { ToastService } from '../core/services/toast.service';
 import { StatusBadgeComponent } from '../shared/status-badge/status-badge.component';
-import type { Game, HealthResponse } from '../core/models/game.models';
-import { environment } from '../../environments/environment';
+import type { Game } from '../core/models/game.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,16 +30,14 @@ export class DashboardComponent {
   private readonly quizService = inject(QuizService);
   private readonly questionService = inject(QuestionService);
   protected readonly gs = inject(GameStateService);
+  protected readonly toast = inject(ToastService);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
 
   protected readonly recentGames = signal<Game[]>([]);
   protected readonly quizCount = signal<number | null>(null);
   protected readonly questionCount = signal<number | null>(null);
   protected readonly gameCount = signal<number | null>(null);
   protected readonly isLoading = signal(true);
-  protected readonly serverVersion = signal<string | null>(null);
-  protected readonly toastMessage = signal<string | null>(null);
 
   protected readonly activeBannerRoute = computed(() => {
     const s = this.gs.status();
@@ -85,8 +82,7 @@ export class DashboardComponent {
 
   protected onNewGameClick(): void {
     if (this.gs.isPiloting()) {
-      this.toastMessage.set('Une partie est déjà en cours');
-      setTimeout(() => this.toastMessage.set(null), 4000);
+      this.toast.show('Une partie est déjà en cours');
       return;
     }
     this.router.navigate(['/games/new']);

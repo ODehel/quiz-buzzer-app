@@ -16,6 +16,7 @@ import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import type { Quiz, QuizFilters } from '../../core/models/quiz.models';
 import type { PagedResponse } from '../../core/models/api.models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-quiz-list',
@@ -26,6 +27,7 @@ import type { PagedResponse } from '../../core/models/api.models';
 })
 export class QuizListComponent {
   private readonly quizService = inject(QuizService);
+  protected readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   @ViewChild(ConfirmDialogComponent) confirmDialog!: ConfirmDialogComponent;
@@ -37,10 +39,6 @@ export class QuizListComponent {
   protected readonly isLoading = signal(true);
 
   protected readonly filterName = signal('');
-
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   protected readonly summaryLevels = ['1', '2', '3', '4', '5'];
 
   private readonly loadTrigger$ = new Subject<void>();
@@ -53,7 +51,7 @@ export class QuizListComponent {
           return this.quizService.getAll(this.buildFilters()).pipe(
             catchError(() => {
               this.isLoading.set(false);
-              this.showToast('Erreur lors du chargement', true);
+              this.toast.show('Erreur lors du chargement', true);
               return EMPTY;
             })
           );
@@ -81,7 +79,7 @@ export class QuizListComponent {
         },
         error: () => {
           this.isLoading.set(false);
-          this.showToast('Erreur lors du chargement', true);
+          this.toast.show('Erreur lors du chargement', true);
         },
       });
   }
@@ -111,7 +109,7 @@ export class QuizListComponent {
 
     try {
       await this.quizService.delete(quiz.id);
-      this.showToast('Quiz supprime');
+      this.toast.show('Quiz supprime');
       this.loadTrigger$.next();
     } catch (err) {
       if (
@@ -119,12 +117,12 @@ export class QuizListComponent {
         err.status === 403 &&
         err.error?.error === 'QUIZ_IN_USE'
       ) {
-        this.showToast(
+        this.toast.show(
           'Ce quiz est utilise par une partie active',
           true
         );
       } else {
-        this.showToast('Erreur lors de la suppression', true);
+        this.toast.show('Erreur lors de la suppression', true);
       }
     }
   }
@@ -183,11 +181,5 @@ export class QuizListComponent {
     };
     if (this.filterName()) filters.name = this.filterName();
     return filters;
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

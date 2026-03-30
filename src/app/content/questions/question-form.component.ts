@@ -23,7 +23,7 @@ import type {
   PatchQuestionDto,
 } from '../../core/models/question.models';
 import type { QuestionType } from '../../core/models/websocket.models';
-import { environment } from '../../../environments/environment';
+import { ToastService } from '../../core/services/toast.service';
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const ACCEPTED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
@@ -40,6 +40,7 @@ const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
 })
 export class QuestionFormComponent {
   private readonly route = inject(ActivatedRoute);
+  protected readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly questionService = inject(QuestionService);
   private readonly themeService = inject(ThemeService);
@@ -74,16 +75,13 @@ export class QuestionFormComponent {
   // UI state
   protected readonly isSubmitting = signal(false);
   protected readonly isUploading = signal<'image' | 'audio' | null>(null);
-  protected readonly fieldErrors = signal<Record<string, string>>({});
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-  protected readonly themes = signal<Theme[]>([]);
+  protected readonly fieldErrors = signal<Record<string, string>>({});  protected readonly themes = signal<Theme[]>([]);
 
   protected readonly choiceLetters = CHOICE_LETTERS;
 
   protected readonly imageUrl = computed(() => {
     const path = this.imagePath();
-    return path ? `${environment.serverUrl}${path}` : null;
+    return this.questionService.getMediaUrl(path);
   });
 
   constructor() {
@@ -121,7 +119,7 @@ export class QuestionFormComponent {
         },
         error: (err: HttpErrorResponse) => {
           if (err.status === 404) {
-            this.showToast('Question introuvable', true);
+            this.toast.show('Question introuvable', true);
             this.router.navigate(['/content/questions']);
           }
         },
@@ -193,7 +191,7 @@ export class QuestionFormComponent {
     this.isSubmitting.set(true);
     try {
       await this.questionService.create(dto);
-      this.showToast('Question creee');
+      this.toast.show('Question creee');
       this.router.navigate(['/content/questions']);
     } catch (err) {
       this.handleSubmitError(err);
@@ -206,7 +204,7 @@ export class QuestionFormComponent {
     const patch = this.buildPatchPayload();
 
     if (Object.keys(patch).length === 0) {
-      this.showToast('Aucune modification detectee');
+      this.toast.show('Aucune modification detectee');
       this.router.navigate(['/content/questions']);
       return;
     }
@@ -214,7 +212,7 @@ export class QuestionFormComponent {
     this.isSubmitting.set(true);
     try {
       await this.questionService.patch(this.questionId()!, patch);
-      this.showToast('Question mise a jour');
+      this.toast.show('Question mise a jour');
       this.router.navigate(['/content/questions']);
     } catch (err) {
       this.handleSubmitError(err);
@@ -234,7 +232,7 @@ export class QuestionFormComponent {
         title: 'Ce titre existe deja',
       }));
     } else {
-      this.showToast('Erreur serveur, reessayez', true);
+      this.toast.show('Erreur serveur, reessayez', true);
     }
   }
 
@@ -365,7 +363,7 @@ export class QuestionFormComponent {
       this.imagePath.set(result.image_path);
       this.audioPath.set(result.audio_path);
     } catch {
-      this.showToast('Erreur lors de l\'upload', true);
+      this.toast.show('Erreur lors de l\'upload', true);
     } finally {
       this.isUploading.set(null);
     }
@@ -385,7 +383,7 @@ export class QuestionFormComponent {
         this.audioPath.set(null);
       }
     } catch {
-      this.showToast('Erreur lors de la suppression du media', true);
+      this.toast.show('Erreur lors de la suppression du media', true);
     }
   }
 
@@ -403,11 +401,5 @@ export class QuestionFormComponent {
       delete copy[key];
       return copy;
     });
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

@@ -111,6 +111,6 @@
 }
 
 <!-- Toast -->
-@if (toastMessage()) {
-  <div class="toast" data-testid="toast">{{ toastMessage() }}</div>
+@if (toast.message()) {
+  <div class="toast" data-testid="toast">{{ toast.message() }}</div>
 }

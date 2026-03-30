@@ -4,6 +4,7 @@ import { of, throwError, NEVER } from 'rxjs';
 
 import { SoundListComponent } from './sound-list.component';
 import { SoundService } from './sound.service';
+import { ToastService } from '../../core/services/toast.service';
 import type { Sound } from '../../core/models/sound.models';
 import type { PagedResponse } from '../../core/models/api.models';
 
@@ -180,7 +181,7 @@ describe('SoundListComponent', () => {
 
     expect(soundServiceMock.upload).toHaveBeenCalledWith('Mon jingle', file);
     expect(component['dialogOpen']()).toBe(false);
-    expect(component['toastMessage']()).toBe('Jingle ajouté');
+    expect(TestBed.inject(ToastService).message()).toBe('Jingle ajouté');
     // getAll called once initially + once after upload
     expect(soundServiceMock.getAll).toHaveBeenCalledTimes(2);
   });
@@ -244,7 +245,7 @@ describe('SoundListComponent', () => {
     await component['onDeleteClick'](MOCK_SOUND);
 
     expect(soundServiceMock.delete).toHaveBeenCalledWith('s1');
-    expect(component['toastMessage']()).toBe('Jingle supprimé');
+    expect(TestBed.inject(ToastService).message()).toBe('Jingle supprimé');
   });
 
   it('CA-9: does not delete when confirmation is cancelled', async () => {

@@ -14,10 +14,10 @@
         <span class="ws-label" style="color:var(--red)">Déconnecté</span>
       }
       <span style="color:var(--border)">|</span>
-      <span>{{ serverUrl }}</span>
+      <span>{{ health.serverUrl }}</span>
     </div>
-    @if (serverVersion()) {
-      <div class="topbar-version">{{ serverVersion() }}</div>
+    @if (health.version()) {
+      <div class="topbar-version">{{ health.version() }}</div>
     }
   </header>
 

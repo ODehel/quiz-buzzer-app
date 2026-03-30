@@ -19,26 +19,18 @@ import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import type { Question, QuestionFilters, Theme } from '../../core/models/question.models';
 import type { PagedResponse } from '../../core/models/api.models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-question-list',
   imports: [FormsModule, RouterLink, PaginatorComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './question-list.component.html',
-  styles: [`
-    :host { display: block; }
-
-    .table-header,
-    .table-row {
-      display: grid;
-      grid-template-columns: 1fr 140px 72px 90px 80px 70px 60px 72px;
-      gap: 8px;
-      align-items: center;
-    }
-  `],
+  styleUrl: './question-list.component.css',
 })
 export class QuestionListComponent {
   private readonly questionService = inject(QuestionService);
+  protected readonly toast = inject(ToastService);
   private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -61,9 +53,6 @@ export class QuestionListComponent {
   protected readonly filterPointsMax = signal<number | null>(null);
 
   // Toast
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   protected readonly levelDots = [1, 2, 3, 4, 5];
 
   protected readonly levelRangeInvalid = computed(() => {
@@ -91,7 +80,7 @@ export class QuestionListComponent {
           return this.questionService.getAll(this.buildFilters()).pipe(
             catchError(() => {
               this.isLoading.set(false);
-              this.showToast('Erreur lors du chargement', true);
+              this.toast.show('Erreur lors du chargement', true);
               return EMPTY;
             })
           );
@@ -122,7 +111,7 @@ export class QuestionListComponent {
         },
         error: () => {
           this.isLoading.set(false);
-          this.showToast('Erreur lors du chargement', true);
+          this.toast.show('Erreur lors du chargement', true);
         },
       });
   }
@@ -179,7 +168,7 @@ export class QuestionListComponent {
 
     try {
       await this.questionService.delete(question.id);
-      this.showToast('Question supprimee');
+      this.toast.show('Question supprimee');
       this.loadTrigger$.next();
     } catch (err) {
       if (
@@ -187,12 +176,12 @@ export class QuestionListComponent {
         err.status === 409 &&
         err.error?.error === 'QUESTION_IN_QUIZ'
       ) {
-        this.showToast(
+        this.toast.show(
           'Cette question appartient a un ou plusieurs quiz',
           true
         );
       } else {
-        this.showToast('Erreur lors de la suppression', true);
+        this.toast.show('Erreur lors de la suppression', true);
       }
     }
   }
@@ -218,11 +207,5 @@ export class QuestionListComponent {
     if (this.filterPointsMax() != null)
       filters.points_max = this.filterPointsMax()!;
     return filters;
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

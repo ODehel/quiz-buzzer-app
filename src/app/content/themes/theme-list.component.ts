@@ -1,6 +1,7 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  DestroyRef,
   inject,
   signal,
   ViewChild,
@@ -13,6 +14,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ThemeService } from './theme.service';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import type { Theme } from '../../core/models/question.models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-theme-list',
@@ -23,6 +25,8 @@ import type { Theme } from '../../core/models/question.models';
 })
 export class ThemeListComponent {
   private readonly themeService = inject(ThemeService);
+  private readonly destroyRef = inject(DestroyRef);
+  protected readonly toast = inject(ToastService);
 
   @ViewChild('createInput') createInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('editInput') editInputRef?: ElementRef<HTMLInputElement>;
@@ -39,10 +43,6 @@ export class ThemeListComponent {
   protected readonly editingId = signal<string | null>(null);
   protected readonly editingName = signal('');
   protected readonly editError = signal<string | null>(null);
-
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   constructor() {
     this.themeService
       .getAll()
@@ -55,7 +55,7 @@ export class ThemeListComponent {
         },
         error: () => {
           this.isLoading.set(false);
-          this.showToast('Erreur lors du chargement', true);
+          this.toast.show('Erreur lors du chargement', true);
         },
       });
   }
@@ -86,7 +86,7 @@ export class ThemeListComponent {
       this.isCreating.set(false);
       this.newName.set('');
       this.createError.set(null);
-      this.showToast('Thème créé');
+      this.toast.show('Thème créé');
       this.reload();
     } catch (err) {
       if (
@@ -96,7 +96,7 @@ export class ThemeListComponent {
       ) {
         this.createError.set('Un thème porte déjà ce nom');
       } else {
-        this.showToast('Erreur lors de la création', true);
+        this.toast.show('Erreur lors de la création', true);
       }
     }
   }
@@ -135,7 +135,7 @@ export class ThemeListComponent {
       this.editingId.set(null);
       this.editingName.set('');
       this.editError.set(null);
-      this.showToast('Thème renommé');
+      this.toast.show('Thème renommé');
     } catch (err) {
       if (
         err instanceof HttpErrorResponse &&
@@ -144,7 +144,7 @@ export class ThemeListComponent {
       ) {
         this.editError.set('Un thème porte déjà ce nom');
       } else {
-        this.showToast('Erreur lors du renommage', true);
+        this.toast.show('Erreur lors du renommage', true);
       }
     }
   }
@@ -159,19 +159,19 @@ export class ThemeListComponent {
       await this.themeService.delete(theme.id);
       this.themes.update((list) => list.filter((t) => t.id !== theme.id));
       this.total.update((n) => n - 1);
-      this.showToast('Thème supprimé');
+      this.toast.show('Thème supprimé');
     } catch (err) {
       if (
         err instanceof HttpErrorResponse &&
         err.status === 409 &&
         err.error?.error === 'THEME_HAS_QUESTIONS'
       ) {
-        this.showToast(
+        this.toast.show(
           'Ce thème contient des questions — supprimez-les ou réassignez-les d\'abord',
           true
         );
       } else {
-        this.showToast('Erreur lors de la suppression', true);
+        this.toast.show('Erreur lors de la suppression', true);
       }
     }
   }
@@ -194,17 +194,13 @@ export class ThemeListComponent {
   }
 
   private reload(): void {
-    this.themeService.getAll().subscribe({
-      next: (res) => {
-        this.themes.set(res.data);
-        this.total.set(res.total);
-      },
-    });
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
+    this.themeService.getAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.themes.set(res.data);
+          this.total.set(res.total);
+        },
+      });
   }
 }

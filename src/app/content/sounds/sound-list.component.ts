@@ -16,6 +16,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 import type { Sound } from '../../core/models/sound.models';
 import { ALLOWED_SOUND_MIMES, MAX_SOUND_FILE_SIZE } from '../../core/models/sound.models';
 import type { PagedResponse } from '../../core/models/api.models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-sound-list',
@@ -26,6 +27,7 @@ import type { PagedResponse } from '../../core/models/api.models';
 })
 export class SoundListComponent {
   private readonly soundService = inject(SoundService);
+  protected readonly toast = inject(ToastService);
 
   @ViewChild(ConfirmDialogComponent) confirmDialog!: ConfirmDialogComponent;
 
@@ -40,10 +42,6 @@ export class SoundListComponent {
   private selectedFile: File | null = null;
 
   protected readonly canUpload = signal(false);
-
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   private readonly loadTrigger$ = new Subject<void>();
 
   constructor() {
@@ -54,7 +52,7 @@ export class SoundListComponent {
           return this.soundService.getAll({ page: this.currentPage(), limit: 20 }).pipe(
             catchError(() => {
               this.isLoading.set(false);
-              this.showToast('Erreur lors du chargement', true);
+              this.toast.show('Erreur lors du chargement', true);
               return EMPTY;
             })
           );
@@ -124,7 +122,7 @@ export class SoundListComponent {
     try {
       await this.soundService.upload(this.uploadName(), this.selectedFile);
       this.dialogOpen.set(false);
-      this.showToast('Jingle ajouté');
+      this.toast.show('Jingle ajouté');
       this.loadTrigger$.next();
     } catch (err) {
       if (err instanceof HttpErrorResponse) {
@@ -149,10 +147,10 @@ export class SoundListComponent {
 
     try {
       await this.soundService.delete(sound.id);
-      this.showToast('Jingle supprimé');
+      this.toast.show('Jingle supprimé');
       this.loadTrigger$.next();
     } catch {
-      this.showToast('Erreur lors de la suppression', true);
+      this.toast.show('Erreur lors de la suppression', true);
     }
   }
 
@@ -162,11 +160,5 @@ export class SoundListComponent {
       month: '2-digit',
       year: 'numeric',
     });
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

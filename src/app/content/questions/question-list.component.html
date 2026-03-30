@@ -169,9 +169,9 @@
   </div>
 }
 
-@if (toastMessage()) {
-  <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">
-    {{ toastMessage() }}
+@if (toast.message()) {
+  <div class="toast" [class.toast-error]="toast.isError()" data-testid="toast">
+    {{ toast.message() }}
   </div>
 }
 

@@ -106,9 +106,9 @@
     <app-ranking (close)="gs.dismissRanking()" />
   }
 
-  @if (toastMessage()) {
+  @if (toast.message()) {
     <div class="toast-error" data-testid="toast">
-      {{ toastMessage() }}
+      {{ toast.message() }}
     </div>
   }
 </div>

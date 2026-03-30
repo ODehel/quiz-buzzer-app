@@ -14,6 +14,7 @@ import { GameService } from './game.service';
 import { QuizService } from '../content/quizzes/quiz.service';
 import { GameStateService } from '../core/services/game-state.service';
 import type { Quiz, QuizDetail } from '../core/models/quiz.models';
+import { ToastService } from '../core/services/toast.service';
 
 @Component({
   selector: 'app-game-create',
@@ -24,6 +25,7 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
 })
 export class GameCreateComponent {
   private readonly gameService = inject(GameService);
+  protected readonly toast = inject(ToastService);
   private readonly quizService = inject(QuizService);
   private readonly gs = inject(GameStateService);
   private readonly router = inject(Router);
@@ -36,8 +38,6 @@ export class GameCreateComponent {
   protected readonly participants = signal<string[]>(['']);
   protected readonly fieldErrors = signal<Record<string, string>>({});
   protected readonly isSubmitting = signal(false);
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
   protected readonly showResumeLink = signal(false);
 
   protected readonly levelRange = [1, 2, 3, 4, 5];
@@ -110,7 +110,7 @@ export class GameCreateComponent {
   constructor() {
     // CA-14: defensive redirect if piloting
     if (this.gs.isPiloting()) {
-      this.showToast('Une partie est déjà en cours', true);
+      this.toast.show('Une partie est déjà en cours', true);
       this.router.navigate(['/pilot/play']);
       return;
     }
@@ -126,7 +126,7 @@ export class GameCreateComponent {
         },
         error: () => {
           this.isLoadingQuizzes.set(false);
-          this.showToast('Erreur lors du chargement des quiz', true);
+          this.toast.show('Erreur lors du chargement des quiz', true);
         },
       });
   }
@@ -190,19 +190,19 @@ export class GameCreateComponent {
       if (err instanceof HttpErrorResponse) {
         if (err.status === 409 && err.error?.error === 'ACTIVE_GAME_EXISTS') {
           // CA-26
-          this.showToast('Une partie est déjà en cours', true);
+          this.toast.show('Une partie est déjà en cours', true);
           this.showResumeLink.set(true);
           return;
         }
         if (err.status === 404 && err.error?.error === 'QUIZ_NOT_FOUND') {
           // CA-27
-          this.showToast('Le quiz sélectionné n\'existe plus', true);
+          this.toast.show('Le quiz sélectionné n\'existe plus', true);
           this.reloadQuizzes();
           return;
         }
       }
       // CA-28: generic error
-      this.showToast('Erreur lors de la création', true);
+      this.toast.show('Erreur lors de la création', true);
     }
   }
 
@@ -246,13 +246,4 @@ export class GameCreateComponent {
     });
   }
 
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    this.showResumeLink.set(false);
-    setTimeout(() => {
-      this.toastMessage.set(null);
-      this.showResumeLink.set(false);
-    }, 4000);
-  }
 }

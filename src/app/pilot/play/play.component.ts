@@ -20,6 +20,7 @@ import { SpeedControlComponent } from './speed-control/speed-control.component';
 import { SoundPanelComponent } from './sound-panel/sound-panel.component';
 import { RankingComponent } from './ranking/ranking.component';
 import type { InboundMessage, OutboundMessage } from '../../core/models/websocket.models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-play',
@@ -39,19 +40,18 @@ export class PlayComponent {
   protected readonly gs = inject(GameStateService);
   protected readonly ws = inject(WebSocketService);
   private readonly router = inject(Router);
+  protected readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('mcqControl') mcqControl?: McqControlComponent;
   @ViewChild('speedControl') speedControl?: SpeedControlComponent;
 
   protected readonly isWaitingTrigger = signal(false);
-  protected readonly toastMessage = signal<string | null>(null);
-
   constructor() {
     // CA-29: Show toast from noActiveGameGuard redirect
     const navToast = this.router.getCurrentNavigation()?.extras.state?.['toast'];
     if (navToast) {
-      this.showToast(navToast);
+      this.toast.show(navToast);
     }
 
     // CA-18: Navigate to results on COMPLETED
@@ -120,17 +120,12 @@ export class PlayComponent {
       case 'error': {
         const errorMsg = msg as InboundMessage & { code?: string; message?: string };
         if (errorMsg.code === 'ANSWERS_PENDING') {
-          this.showToast('Des joueurs n\'ont pas encore répondu');
+          this.toast.show('Des joueurs n\'ont pas encore répondu');
         } else if (errorMsg.code === 'INVALID_STATE') {
-          this.showToast('Classement indisponible dans cet état');
+          this.toast.show('Classement indisponible dans cet état');
         }
         break;
       }
     }
-  }
-
-  private showToast(message: string): void {
-    this.toastMessage.set(message);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }
