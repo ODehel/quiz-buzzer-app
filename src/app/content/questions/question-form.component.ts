@@ -66,7 +66,7 @@ export class QuestionFormComponent {
   protected readonly formCorrectAnswer = signal('');
   protected readonly formLevel = signal(3);
   protected readonly formTimeLimit = signal(30);
-  protected readonly formPoints = signal(200);
+  protected readonly formPoints = signal(10);
 
   // Media
   protected readonly imagePath = signal<string | null>(null);

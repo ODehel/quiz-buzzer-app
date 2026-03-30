@@ -24,7 +24,7 @@ const MOCK_QUESTION: Question = {
   correct_answer: 'Paris',
   level: 3,
   time_limit: 30,
-  points: 200,
+  points: 10,
   image_path: null,
   audio_path: null,
   created_at: '2026-01-01T00:00:00Z',
@@ -95,13 +95,13 @@ describe('QuestionFormComponent', () => {
     });
 
     // CA-13: form has default values
-    it('CA-13: initializes with default values (MCQ, level 3, 30s, 200pts)', () => {
+    it('CA-13: initializes with default values (MCQ, level 3, 30s, 10pts)', () => {
       setup();
       const component = fixture.componentInstance;
       expect((component as any).formType()).toBe('MCQ');
       expect((component as any).formLevel()).toBe(3);
       expect((component as any).formTimeLimit()).toBe(30);
-      expect((component as any).formPoints()).toBe(200);
+      expect((component as any).formPoints()).toBe(10);
     });
 
     // CA-16: toggle MCQ/SPEED is active in creation
