@@ -54,6 +54,7 @@ export type InboundMessage =
   | BuzzUnlockedMessage
   | BuzzerConnectedMessage
   | BuzzerDisconnectedMessage
+  | ConnectedBuzzersSyncMessage
   | QuestionResultSummaryMessage
   | IntermediateRankingMessage
   | ErrorMessage
@@ -155,6 +156,11 @@ export interface BuzzerConnectedMessage {
 export interface BuzzerDisconnectedMessage {
   type: 'buzzer_disconnected';
   username: string;
+}
+
+export interface ConnectedBuzzersSyncMessage {
+  type: 'connected_buzzers_sync';
+  connected_buzzers: string[];
 }
 
 export interface McqPlayerResult {
