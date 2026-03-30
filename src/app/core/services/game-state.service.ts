@@ -23,6 +23,7 @@ import type {
   BuzzUnlockedMessage,
   BuzzerConnectedMessage,
   BuzzerDisconnectedMessage,
+  ConnectedBuzzersSyncMessage,
   QuestionResultSummaryMessage,
   IntermediateRankingMessage,
   McqPlayerResult,
@@ -270,6 +271,9 @@ export class GameStateService {
       case 'buzzer_disconnected':
         this.removeBuzzer((msg as BuzzerDisconnectedMessage).username);
         break;
+      case 'connected_buzzers_sync':
+        this.handleConnectedBuzzersSync(msg as ConnectedBuzzersSyncMessage);
+        break;
       case 'question_result_summary':
         this.handleQuestionResultSummary(msg as QuestionResultSummaryMessage);
         break;
@@ -304,6 +308,14 @@ export class GameStateService {
           ? computeRemaining(started_at, time_limit)
           : null,
       questionResults: s.questionResults, // preserve across reconnection
+    }));
+  }
+
+  private handleConnectedBuzzersSync(msg: ConnectedBuzzersSyncMessage): void {
+    this.clearSyncTimeout();
+    this._state.update((s) => ({
+      ...s,
+      connectedBuzzers: msg.connected_buzzers,
     }));
   }
 
