@@ -20,7 +20,7 @@ const STATUS_MAP: Record<GameStatus, BadgeConfig> = {
 @Component({
   selector: 'app-status-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<span [class]="config().cssClass">{{ config().label }}</span>`,
+  templateUrl: './status-badge.component.html',
   styles: [],
 })
 export class StatusBadgeComponent {
