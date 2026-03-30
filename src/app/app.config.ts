@@ -1,7 +1,7 @@
-import { ApplicationConfig, APP_INITIALIZER } from '@angular/core';
+import { ApplicationConfig, provideAppInitializer, provideZoneChangeDetection, inject } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -11,22 +11,19 @@ import { GameStateService } from './core/services/game-state.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideAnimations(),
-    {
-      provide: APP_INITIALIZER,
-      useFactory:
-        (auth: AuthService, ws: WebSocketService, gs: GameStateService) =>
-        async () => {
-          await auth.initialize();
-          if (auth.isReady()) {
-            ws.connect();
-            await gs.syncInitial();
-          }
-        },
-      deps: [AuthService, WebSocketService, GameStateService],
-      multi: true,
-    },
+    provideAnimationsAsync(),
+    provideAppInitializer(async () => {
+      const auth = inject(AuthService);
+      const ws = inject(WebSocketService);
+      const gs = inject(GameStateService);
+      await auth.initialize();
+      if (auth.isReady()) {
+        ws.connect();
+        await gs.syncInitial();
+      }
+    }),
   ],
 };

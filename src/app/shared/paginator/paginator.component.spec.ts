@@ -17,15 +17,15 @@ describe('PaginatorComponent', () => {
   });
 
   it('renders paginator nav', () => {
-    component.page = 1;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 1);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
     expect(el.querySelector('[data-testid="paginator"]')).toBeTruthy();
   });
 
   it('displays page buttons within range', () => {
-    component.page = 3;
-    component.total = 10;
+    fixture.componentRef.setInput('page', 3);
+    fixture.componentRef.setInput('total', 10);
     fixture.detectChanges();
 
     // Should show pages 1-5 (current - 2 to current + 2)
@@ -35,8 +35,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('marks current page as active', () => {
-    component.page = 2;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 2);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const btn = el.querySelector('[data-testid="paginator-page-2"]');
@@ -44,8 +44,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('disables prev button on first page', () => {
-    component.page = 1;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 1);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const prevBtn = el.querySelector('[data-testid="paginator-prev"]') as HTMLButtonElement;
@@ -53,8 +53,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('disables next button on last page', () => {
-    component.page = 5;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 5);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const nextBtn = el.querySelector('[data-testid="paginator-next"]') as HTMLButtonElement;
@@ -62,8 +62,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('emits pageChange on page click', () => {
-    component.page = 1;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 1);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const spy = jest.fn();
@@ -76,8 +76,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('emits pageChange on next click', () => {
-    component.page = 2;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 2);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const spy = jest.fn();
@@ -90,8 +90,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('emits pageChange on prev click', () => {
-    component.page = 3;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 3);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const spy = jest.fn();
@@ -104,8 +104,8 @@ describe('PaginatorComponent', () => {
   });
 
   it('does not emit when clicking current page', () => {
-    component.page = 2;
-    component.total = 5;
+    fixture.componentRef.setInput('page', 2);
+    fixture.componentRef.setInput('total', 5);
     fixture.detectChanges();
 
     const spy = jest.fn();

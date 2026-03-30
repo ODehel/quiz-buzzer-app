@@ -16,6 +16,7 @@ import { StatusBadgeComponent } from '../shared/status-badge/status-badge.compon
 import { PaginatorComponent } from '../shared/paginator/paginator.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 import type { Game } from '../core/models/game.models';
+import { ToastService } from '../core/services/toast.service';
 
 export interface GameRow extends Game {
   quizName: string;
@@ -23,7 +24,6 @@ export interface GameRow extends Game {
 
 @Component({
   selector: 'app-game-list',
-  standalone: true,
   imports: [
     RouterLink,
     StatusBadgeComponent,
@@ -32,68 +32,11 @@ export interface GameRow extends Game {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [],
-  template: `
-    <div class="page-header">
-      <h1 class="page-title">Parties</h1>
-      <div class="page-actions">
-        <button class="btn-primary" (click)="onNewGameClick()" data-testid="btn-new-game">
-          <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          Nouvelle partie
-        </button>
-      </div>
-    </div>
-
-    @if (isLoading()) {
-      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="loading">Chargement…</div>
-    } @else if (games().length === 0) {
-      <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="empty-list">Aucune partie</div>
-    } @else {
-      <div class="table-wrap" data-testid="games-table">
-        <div class="table-header" style="display:grid;grid-template-columns:1fr 120px 140px 100px 100px;padding:10px 16px">
-          <span>Quiz</span>
-          <span>Statut</span>
-          <span>Date de création</span>
-          <span>Participants</span>
-          <span style="text-align:right">Actions</span>
-        </div>
-        @for (game of games(); track game.id) {
-          <div class="table-row" style="display:grid;grid-template-columns:1fr 120px 140px 100px 100px;align-items:center;padding:10px 16px" data-testid="game-row">
-            <span style="font-weight:500" data-testid="game-quiz-name">{{ game.quizName }}</span>
-            <div><app-status-badge [status]="game.status" /></div>
-            <span style="font-size:12px;color:var(--muted)" data-testid="game-date">{{ formatDate(game.created_at) }}</span>
-            <span style="font-size:13px" data-testid="game-participants">{{ game.participants.length }}</span>
-            <div style="display:flex;gap:6px;justify-content:flex-end">
-              <a class="btn-ghost" style="padding:4px 10px;font-size:12px" [routerLink]="gameRoute(game)" data-testid="btn-view">Voir</a>
-              @if (game.status === 'PENDING') {
-                <button class="btn-icon" style="color:var(--red)" (click)="onDeleteClick(game)" data-testid="btn-delete">
-                  <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                </button>
-              }
-            </div>
-          </div>
-        }
-      </div>
-
-      @if (totalPages() > 1) {
-        <div style="margin-top:16px">
-          <app-paginator
-            [page]="currentPage()"
-            [total]="totalPages()"
-            (pageChange)="onPageChange($event)"
-          />
-        </div>
-      }
-    }
-
-    @if (toastMessage()) {
-      <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">{{ toastMessage() }}</div>
-    }
-
-    <app-confirm-dialog />
-  `,
+  templateUrl: './game-list.component.html',
 })
 export class GameListComponent {
   private readonly gameService = inject(GameService);
+  protected readonly toast = inject(ToastService);
   private readonly quizService = inject(QuizService);
   private readonly gs = inject(GameStateService);
   private readonly router = inject(Router);
@@ -104,9 +47,6 @@ export class GameListComponent {
   protected readonly currentPage = signal(1);
   protected readonly totalPages = signal(1);
   protected readonly isLoading = signal(true);
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   private quizNameMap = new Map<string, string>();
   private readonly loadTrigger$ = new Subject<void>();
 
@@ -120,7 +60,7 @@ export class GameListComponent {
             .pipe(
               catchError(() => {
                 this.isLoading.set(false);
-                this.showToast('Erreur lors du chargement', true);
+                this.toast.show('Erreur lors du chargement', true);
                 return EMPTY;
               })
             );
@@ -145,14 +85,14 @@ export class GameListComponent {
         },
         error: () => {
           this.isLoading.set(false);
-          this.showToast('Erreur lors du chargement', true);
+          this.toast.show('Erreur lors du chargement', true);
         },
       });
   }
 
   protected onNewGameClick(): void {
     if (this.gs.isPiloting()) {
-      this.showToast('Une partie est déjà en cours', true);
+      this.toast.show('Une partie est déjà en cours', true);
       return;
     }
     this.router.navigate(['/games/new']);
@@ -171,10 +111,10 @@ export class GameListComponent {
 
     try {
       await this.gameService.delete(game.id);
-      this.showToast('Partie supprimée');
+      this.toast.show('Partie supprimée');
       this.loadTrigger$.next();
     } catch {
-      this.showToast('Erreur lors de la suppression', true);
+      this.toast.show('Erreur lors de la suppression', true);
     }
   }
 
@@ -215,11 +155,5 @@ export class GameListComponent {
     this.totalPages.set(response.total_pages);
     this.currentPage.set(response.page);
     this.isLoading.set(false);
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

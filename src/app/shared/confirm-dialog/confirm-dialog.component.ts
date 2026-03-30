@@ -2,21 +2,8 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 
 @Component({
   selector: 'app-confirm-dialog',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (isOpen()) {
-      <div class="modal-overlay" (click)="onCancel()" data-testid="confirm-overlay">
-        <div class="modal" (click)="$event.stopPropagation()" data-testid="confirm-dialog">
-          <div class="modal-body">{{ message() }}</div>
-          <div class="modal-actions">
-            <button class="btn-modal-cancel" (click)="onCancel()" data-testid="confirm-cancel">Annuler</button>
-            <button class="btn-modal-danger" (click)="onConfirm()" data-testid="confirm-ok">Confirmer</button>
-          </div>
-        </div>
-      </div>
-    }
-  `,
+  templateUrl: './confirm-dialog.component.html',
   styles: [],
 })
 export class ConfirmDialogComponent {

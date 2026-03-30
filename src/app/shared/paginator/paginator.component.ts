@@ -1,49 +1,19 @@
-import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter, computed, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 
 @Component({
   selector: 'app-paginator',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="paginator" data-testid="paginator">
-      <span class="paginator-info">Page {{ currentPage() }} / {{ totalPages() }}</span>
-      <div class="paginator-pages">
-        <button
-          class="page-btn"
-          [disabled]="currentPage() <= 1"
-          (click)="onPageChange(currentPage() - 1)"
-          data-testid="paginator-prev"
-        >&laquo;</button>
-        @for (p of pages(); track p) {
-          <button
-            class="page-btn"
-            [class.active]="p === currentPage()"
-            (click)="onPageChange(p)"
-            [attr.data-testid]="'paginator-page-' + p"
-          >{{ p }}</button>
-        }
-        <button
-          class="page-btn"
-          [disabled]="currentPage() >= totalPages()"
-          (click)="onPageChange(currentPage() + 1)"
-          data-testid="paginator-next"
-        >&raquo;</button>
-      </div>
-    </div>
-  `,
+  templateUrl: './paginator.component.html',
   styles: [],
 })
 export class PaginatorComponent {
-  readonly currentPage = signal(1);
-  readonly totalPages = signal(1);
-
-  @Input() set page(value: number) { this.currentPage.set(value); }
-  @Input() set total(value: number) { this.totalPages.set(value); }
-  @Output() pageChange = new EventEmitter<number>();
+  readonly page = input(1);
+  readonly total = input(1);
+  readonly pageChange = output<number>();
 
   protected readonly pages = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
+    const total = this.total();
+    const current = this.page();
     const pages: number[] = [];
     const start = Math.max(1, current - 2);
     const end = Math.min(total, current + 2);
@@ -52,7 +22,7 @@ export class PaginatorComponent {
   });
 
   protected onPageChange(page: number): void {
-    if (page >= 1 && page <= this.totalPages() && page !== this.currentPage()) {
+    if (page >= 1 && page <= this.total() && page !== this.page()) {
       this.pageChange.emit(page);
     }
   }

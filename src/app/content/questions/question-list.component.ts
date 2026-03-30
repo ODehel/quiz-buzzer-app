@@ -19,206 +19,18 @@ import { PaginatorComponent } from '../../shared/paginator/paginator.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import type { Question, QuestionFilters, Theme } from '../../core/models/question.models';
 import type { PagedResponse } from '../../core/models/api.models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-question-list',
-  standalone: true,
   imports: [FormsModule, RouterLink, PaginatorComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <!-- Header -->
-    <div class="page-header">
-      <h1 class="page-title">Questions <span class="page-sub" data-testid="total-count">({{ total() }})</span></h1>
-      <a routerLink="/content/questions/new" class="btn-primary" data-testid="btn-create">
-        <svg style="width:14px;height:14px;fill:#fff" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        Nouvelle question
-      </a>
-    </div>
-
-    <!-- Filters [CA-4 to CA-7] -->
-    <div class="filters-bar" data-testid="filters">
-
-      <div class="filter-group">
-        <label class="filter-label">Theme</label>
-        <select
-          class="filter-select"
-          [ngModel]="filterThemeId()"
-          (ngModelChange)="onFilterChange('theme_id', $event)"
-          data-testid="filter-theme"
-        >
-          <option value="">Tous les themes</option>
-          @for (theme of themes(); track theme.id) {
-            <option [value]="theme.id">{{ theme.name }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label class="filter-label">Type</label>
-        <select
-          class="filter-select"
-          [ngModel]="filterType()"
-          (ngModelChange)="onFilterChange('type', $event)"
-          data-testid="filter-type"
-        >
-          <option value="">Tous</option>
-          <option value="MCQ">MCQ</option>
-          <option value="SPEED">SPEED</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label class="filter-label">Niveau (plage)</label>
-        <div class="filter-range">
-          <input
-            type="number" class="filter-input" min="1" max="5" placeholder="1"
-            [ngModel]="filterLevelMin()"
-            (ngModelChange)="onFilterChange('level_min', $event)"
-            data-testid="filter-level-min"
-          />
-          <span class="filter-range-sep">-</span>
-          <input
-            type="number" class="filter-input" min="1" max="5" placeholder="5"
-            [ngModel]="filterLevelMax()"
-            (ngModelChange)="onFilterChange('level_max', $event)"
-            [class.error]="levelRangeInvalid()"
-            data-testid="filter-level-max"
-          />
-        </div>
-      </div>
-
-      <div class="filter-group">
-        <label class="filter-label">Points (plage)</label>
-        <div class="filter-range">
-          <input
-            type="number" class="filter-input" min="50" max="500" step="50" placeholder="50"
-            [ngModel]="filterPointsMin()"
-            (ngModelChange)="onFilterChange('points_min', $event)"
-            data-testid="filter-points-min"
-          />
-          <span class="filter-range-sep">-</span>
-          <input
-            type="number" class="filter-input" min="50" max="500" step="50" placeholder="500"
-            [ngModel]="filterPointsMax()"
-            (ngModelChange)="onFilterChange('points_max', $event)"
-            [class.error]="pointsRangeInvalid()"
-            data-testid="filter-points-max"
-          />
-        </div>
-      </div>
-
-      <div class="filter-total">
-        <strong>{{ total() }}</strong> resultats
-      </div>
-
-      <button
-        class="btn-ghost"
-        (click)="onResetFilters()"
-        data-testid="btn-reset-filters"
-      >
-        Reinitialiser
-      </button>
-    </div>
-
-    @if (isLoading()) {
-      <div class="loading" data-testid="loading">Chargement...</div>
-    } @else if (questions().length === 0) {
-      <p class="empty" data-testid="empty-list">Aucune question</p>
-    } @else {
-      <div class="table-wrap" data-testid="questions-table">
-        <div class="table-header">
-          <div>Titre</div>
-          <div>Theme</div>
-          <div>Type</div>
-          <div>Niveau</div>
-          <div>Duree</div>
-          <div>Points</div>
-          <div>Medias</div>
-          <div style="text-align:right">Actions</div>
-        </div>
-
-        @for (q of questions(); track q.id) {
-          <div class="table-row" data-testid="question-row">
-            <div class="q-title" [title]="q.title">{{ truncate(q.title, 40) }}</div>
-            <div class="q-theme">{{ q.theme_name }}</div>
-            <div>
-              <span class="badge-type" [class.badge-mcq]="q.type === 'MCQ'" [class.badge-speed]="q.type === 'SPEED'">{{ q.type }}</span>
-            </div>
-            <div class="level-dots" data-testid="level-dots">
-              @for (dot of levelDots; track dot) {
-                <div
-                  class="level-dot"
-                  [class.on-1]="dot <= q.level && dot === 1"
-                  [class.on-2]="dot <= q.level && dot === 2"
-                  [class.on-3]="dot <= q.level && dot === 3"
-                  [class.on-4]="dot <= q.level && dot === 4"
-                  [class.on-5]="dot <= q.level && dot === 5"
-                ></div>
-              }
-            </div>
-            <div class="q-meta">{{ q.time_limit }} s</div>
-            <div class="q-meta">{{ q.points }} pts</div>
-            <div class="media-icons">
-              <div class="media-icon" [class.active]="q.image_path" [class.inactive]="!q.image_path" title="Image" data-testid="icon-image">
-                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-              </div>
-              <div class="media-icon" [class.active]="q.audio_path" [class.inactive]="!q.audio_path" title="Audio" data-testid="icon-audio">
-                <svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
-              </div>
-            </div>
-            <div class="row-actions">
-              <a
-                class="btn-icon"
-                [routerLink]="'/content/questions/' + q.id"
-                title="Modifier"
-                data-testid="btn-edit"
-              >
-                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-              </a>
-              <button
-                class="btn-icon danger"
-                (click)="onDeleteClick(q)"
-                title="Supprimer"
-                data-testid="btn-delete"
-              >
-                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              </button>
-            </div>
-          </div>
-        }
-
-        @if (totalPages() > 1) {
-          <app-paginator
-            [page]="currentPage()"
-            [total]="totalPages()"
-            (pageChange)="onPageChange($event)"
-          />
-        }
-      </div>
-    }
-
-    @if (toastMessage()) {
-      <div class="toast" [class.toast-error]="toastIsError()" data-testid="toast">
-        {{ toastMessage() }}
-      </div>
-    }
-
-    <app-confirm-dialog />
-  `,
-  styles: [`
-    :host { display: block; }
-
-    .table-header,
-    .table-row {
-      display: grid;
-      grid-template-columns: 1fr 140px 72px 90px 80px 70px 60px 72px;
-      gap: 8px;
-      align-items: center;
-    }
-  `],
+  templateUrl: './question-list.component.html',
+  styleUrl: './question-list.component.css',
 })
 export class QuestionListComponent {
   private readonly questionService = inject(QuestionService);
+  protected readonly toast = inject(ToastService);
   private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -241,9 +53,6 @@ export class QuestionListComponent {
   protected readonly filterPointsMax = signal<number | null>(null);
 
   // Toast
-  protected readonly toastMessage = signal<string | null>(null);
-  protected readonly toastIsError = signal(false);
-
   protected readonly levelDots = [1, 2, 3, 4, 5];
 
   protected readonly levelRangeInvalid = computed(() => {
@@ -271,7 +80,7 @@ export class QuestionListComponent {
           return this.questionService.getAll(this.buildFilters()).pipe(
             catchError(() => {
               this.isLoading.set(false);
-              this.showToast('Erreur lors du chargement', true);
+              this.toast.show('Erreur lors du chargement', true);
               return EMPTY;
             })
           );
@@ -302,7 +111,7 @@ export class QuestionListComponent {
         },
         error: () => {
           this.isLoading.set(false);
-          this.showToast('Erreur lors du chargement', true);
+          this.toast.show('Erreur lors du chargement', true);
         },
       });
   }
@@ -359,7 +168,7 @@ export class QuestionListComponent {
 
     try {
       await this.questionService.delete(question.id);
-      this.showToast('Question supprimee');
+      this.toast.show('Question supprimee');
       this.loadTrigger$.next();
     } catch (err) {
       if (
@@ -367,12 +176,12 @@ export class QuestionListComponent {
         err.status === 409 &&
         err.error?.error === 'QUESTION_IN_QUIZ'
       ) {
-        this.showToast(
+        this.toast.show(
           'Cette question appartient a un ou plusieurs quiz',
           true
         );
       } else {
-        this.showToast('Erreur lors de la suppression', true);
+        this.toast.show('Erreur lors de la suppression', true);
       }
     }
   }
@@ -398,11 +207,5 @@ export class QuestionListComponent {
     if (this.filterPointsMax() != null)
       filters.points_max = this.filterPointsMax()!;
     return filters;
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage.set(message);
-    this.toastIsError.set(isError);
-    setTimeout(() => this.toastMessage.set(null), 4000);
   }
 }

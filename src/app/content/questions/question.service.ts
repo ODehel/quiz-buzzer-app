@@ -75,6 +75,10 @@ export class QuestionService {
     );
   }
 
+  getMediaUrl(path: string | null): string | null {
+    return path ? `${environment.serverUrl}${path}` : null;
+  }
+
   private buildParams(filters: QuestionFilters): HttpParams {
     let params = new HttpParams()
       .set('page', filters.page.toString())

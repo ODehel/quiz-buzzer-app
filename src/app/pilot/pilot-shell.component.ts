@@ -3,9 +3,8 @@ import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-pilot-shell',
-  standalone: true,
   imports: [RouterOutlet],
-  template: '<router-outlet />',
+  templateUrl: './pilot-shell.component.html',
   styles: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

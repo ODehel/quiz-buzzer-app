@@ -1,0 +1,116 @@
+<!-- Page header -->
+<div class="page-header">
+  <h1 class="page-title">Tableau de bord</h1>
+  <button class="btn-primary" (click)="onNewGameClick()">
+    <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    Nouvelle partie
+  </button>
+</div>
+
+<!-- Active game banner -->
+@if (gs.isPiloting()) {
+  <div class="banner-active" data-testid="active-banner">
+    <div class="banner-dot"></div>
+    <div class="banner-content">
+      <div class="banner-title">
+        {{ gs.state().quizId || 'Partie active' }}
+        @if (gs.state().questionIndex !== null) {
+          <span style="font-weight:400;color:var(--muted)">— Question {{ gs.state().questionIndex }}</span>
+        }
+      </div>
+      <div class="banner-sub">
+        Statut :
+        <span style="color:#60a5fa;font-weight:500">
+          {{ gs.status() === 'PENDING' ? 'En attente' : 'En cours' }}
+        </span>
+      </div>
+    </div>
+    <a
+      class="btn-outline-sm"
+      [routerLink]="activeBannerRoute()"
+      data-testid="resume-piloting"
+    >Reprendre le pilotage →</a>
+  </div>
+}
+
+@if (isLoading()) {
+  <div style="text-align:center;padding:48px;color:var(--muted)" data-testid="loading">Chargement…</div>
+} @else {
+  <!-- Metrics grid -->
+  <div class="metrics-grid" data-testid="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Buzzers connectés<span class="live-badge">Live</span></div>
+      <div class="metric-value live" data-testid="metric-buzzers">{{ gs.connectedBuzzers().length }}</div>
+      <div class="metric-sub" data-testid="buzzer-names">{{ buzzersSummary() }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Quiz disponibles</div>
+      <div class="metric-value" data-testid="metric-quizzes">{{ quizCount() ?? '—' }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Questions en banque</div>
+      <div class="metric-value" data-testid="metric-questions">{{ questionCount() ?? '—' }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Parties jouées</div>
+      <div class="metric-value" data-testid="metric-games">{{ gameCount() ?? '—' }}</div>
+    </div>
+  </div>
+
+  <!-- Content grid -->
+  <div class="content-grid">
+    <!-- Recent games widget -->
+    <div class="widget">
+      <div class="widget-header">
+        <span class="widget-title">Dernières parties</span>
+        <a class="widget-action" routerLink="/games">Voir tout →</a>
+      </div>
+      @if (recentGames().length === 0) {
+        <div style="padding:24px;text-align:center;color:var(--muted)" data-testid="no-games">Aucune partie</div>
+      } @else {
+        <div class="games-table" data-testid="games-table">
+          @for (game of recentGames(); track game.id) {
+            <div class="games-row">
+              <div>
+                <div class="game-name">{{ game.quiz_name }}</div>
+                <div class="game-date">{{ formatDate(game.created_at) }}</div>
+              </div>
+              <div><app-status-badge [status]="game.status" /></div>
+              <div class="game-date">{{ game.participants.length }} joueurs</div>
+              <a class="game-action" [routerLink]="gameDetailRoute(game)" data-testid="game-link">
+                {{ game.status === 'COMPLETED' || game.status === 'IN_ERROR' ? 'Résultats →' : game.status === 'PENDING' ? 'Lobby →' : 'Piloter →' }}
+              </a>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Buzzers widget -->
+    <div class="widget">
+      <div class="widget-header">
+        <span class="widget-title">Buzzers</span>
+        <span style="font-size:11px;color:var(--green);font-weight:600">{{ gs.connectedBuzzers().length }} connectés</span>
+      </div>
+      <div class="buzzers-list">
+        @for (buzzer of gs.connectedBuzzers(); track buzzer) {
+          <div class="buzzer-row">
+            <div class="buzzer-avatar">{{ buzzer.substring(0, 2).toUpperCase() }}</div>
+            <div>
+              <div class="buzzer-name">{{ buzzer }}</div>
+            </div>
+            <div class="buzzer-status-dot"></div>
+          </div>
+        }
+        @if (gs.connectedBuzzers().length === 0) {
+          <div style="padding:16px;text-align:center;color:var(--muted);font-size:12px">Aucun buzzer connecté</div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Toast -->
+@if (toast.message()) {
+  <div class="toast" data-testid="toast">{{ toast.message() }}</div>
+}

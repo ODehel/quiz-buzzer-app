@@ -3,9 +3,8 @@ import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-content-shell',
-  standalone: true,
   imports: [RouterOutlet],
-  template: '<router-outlet />',
+  templateUrl: './content-shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContentShellComponent {}

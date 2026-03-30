@@ -1,0 +1,134 @@
+<!-- En-tete + actions -->
+<div class="lobby-header" data-testid="lobby-header">
+  <div>
+    <h1 class="lobby-title">Lobby d'attente</h1>
+    <div class="lobby-quiz-name">
+      <span data-testid="quiz-name">Quiz : <span>{{ quizName() ?? 'Chargement...' }}</span></span>
+      &nbsp;&middot;&nbsp;
+      <span data-testid="participant-count">{{ gs.state().participants.length }} participants</span>
+    </div>
+  </div>
+  <div class="lobby-actions" data-testid="lobby-actions">
+    <button
+      class="btn-cancel-game"
+      (click)="onDeleteGame()"
+      [disabled]="isDeleting()"
+      data-testid="btn-delete"
+    >
+      Annuler la partie
+    </button>
+    <button
+      class="btn-start"
+      [class.loading]="isStarting()"
+      (click)="onStartGame()"
+      [disabled]="isStarting()"
+      data-testid="btn-start"
+    >
+      @if (isStarting()) {
+        <div class="spinner"></div>
+        Démarrage…
+      } @else {
+        <svg style="width:14px;height:14px;fill:#fff" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        Démarrer la partie
+      }
+    </button>
+  </div>
+</div>
+
+<!-- Barre de readiness -->
+<div
+  class="readiness-bar-wrap"
+  [class.insufficient]="!isReady()"
+  [class.ready]="isReady()"
+  data-testid="readiness-bar"
+>
+  <div class="readiness-header">
+    <span class="readiness-title">Readiness</span>
+    <span
+      class="readiness-count"
+      [class.insufficient]="!isReady()"
+      [class.ready]="isReady()"
+      data-testid="readiness-label"
+    >
+      {{ gs.connectedBuzzers().length }} / {{ gs.state().participants.length }} buzzers connectés
+    </span>
+  </div>
+  <div class="bar-track">
+    <div
+      class="bar-fill"
+      [class.insufficient]="!isReady()"
+      [class.ready]="isReady()"
+      [style.width.%]="readinessPercent()"
+    ></div>
+  </div>
+</div>
+
+<!-- Grille 2 colonnes : participants + buzzers -->
+<div class="lobby-grid">
+
+  <!-- Panneau participants -->
+  <div class="panel" data-testid="participants-panel">
+    <div class="panel-header">
+      <span class="panel-title">Participants</span>
+      <span style="font-size:11px;color:var(--muted)">{{ gs.state().participants.length }} joueurs enregistrés</span>
+    </div>
+    @for (entry of participantsWithBuzzer(); track entry.order) {
+      <div class="participant-row" data-testid="participant-item">
+        <span class="p-order">{{ entry.order }}</span>
+        <span class="p-name">{{ entry.name }}</span>
+        @if (entry.buzzerUsername) {
+          <div class="buzzer-tag connected" data-testid="buzzer-status">
+            <div class="buzzer-tag-dot"></div>
+            {{ entry.buzzerUsername }}
+          </div>
+        } @else {
+          <div class="buzzer-tag offline" data-testid="buzzer-status">
+            <div class="buzzer-tag-dot"></div>
+            Non connecté
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Panneau buzzers -->
+  <div class="panel" data-testid="buzzers-panel">
+    <div class="panel-header">
+      <span class="panel-title">Buzzers</span>
+      <span style="font-size:11px;color:var(--green);font-weight:600">{{ gs.connectedBuzzers().length }} / {{ MAX_BUZZER_SLOTS }} connectés</span>
+    </div>
+    @for (slot of buzzerSlots(); track slot.index) {
+      <div class="buzzer-row" [style.opacity]="slot.username ? 1 : 0.4" data-testid="buzzer-slot">
+        <div class="buzzer-avatar" [class.online]="slot.username" [class.offline]="!slot.username">
+          B{{ slot.index + 1 }}
+        </div>
+        <div class="buzzer-info">
+          @if (slot.username) {
+            <div class="buzzer-name" data-testid="buzzer-username">{{ slot.username }}</div>
+          } @else {
+            <div class="buzzer-name offline" data-testid="buzzer-username">Slot libre</div>
+          }
+        </div>
+        @if (slot.username) {
+          <div class="buzzer-online-dot"></div>
+        } @else {
+          <div class="buzzer-offline-dot"></div>
+        }
+      </div>
+    }
+  </div>
+
+</div>
+
+@if (toast.message()) {
+  <div
+    class="toast"
+    [class.toast--error]="toast.isError()"
+    [class.toast--success]="!toast.isError()"
+    data-testid="toast"
+  >
+    {{ toast.message() }}
+  </div>
+}
+
+<app-confirm-dialog #confirmDialog />
