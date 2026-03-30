@@ -208,6 +208,7 @@ export class GameStateService {
   /** Start periodic polling for game state (buzzer updates) */
   startPolling(intervalMs = 3_000): void {
     this.stopPolling();
+    this.requestSync(); // immediate first sync
     this.pollingIntervalId = setInterval(() => {
       this.requestSync();
     }, intervalMs);

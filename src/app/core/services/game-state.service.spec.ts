@@ -1014,18 +1014,19 @@ describe('GameStateService', () => {
       expect(wsMock.send).toHaveBeenCalledWith({ type: 'request_game_state' });
     });
 
-    it('startPolling sends request_game_state at the given interval', () => {
+    it('startPolling sends request_game_state immediately and at the given interval', () => {
       jest.useFakeTimers();
       service.startPolling(1_000);
 
-      expect(wsMock.send).not.toHaveBeenCalled();
-
-      jest.advanceTimersByTime(1_000);
+      // immediate sync on start
       expect(wsMock.send).toHaveBeenCalledTimes(1);
       expect(wsMock.send).toHaveBeenCalledWith({ type: 'request_game_state' });
 
       jest.advanceTimersByTime(1_000);
       expect(wsMock.send).toHaveBeenCalledTimes(2);
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(3);
 
       jest.useRealTimers();
     });
@@ -1034,13 +1035,14 @@ describe('GameStateService', () => {
       jest.useFakeTimers();
       service.startPolling(1_000);
 
+      // 1 immediate + 1 after interval
       jest.advanceTimersByTime(1_000);
-      expect(wsMock.send).toHaveBeenCalledTimes(1);
+      expect(wsMock.send).toHaveBeenCalledTimes(2);
 
       service.stopPolling();
 
       jest.advanceTimersByTime(3_000);
-      expect(wsMock.send).toHaveBeenCalledTimes(1);
+      expect(wsMock.send).toHaveBeenCalledTimes(2);
 
       jest.useRealTimers();
     });
@@ -1050,11 +1052,15 @@ describe('GameStateService', () => {
       service.startPolling(1_000);
       service.startPolling(2_000);
 
-      jest.advanceTimersByTime(1_000);
-      expect(wsMock.send).not.toHaveBeenCalled();
+      // 2 immediate calls (one per startPolling)
+      expect(wsMock.send).toHaveBeenCalledTimes(2);
 
       jest.advanceTimersByTime(1_000);
-      expect(wsMock.send).toHaveBeenCalledTimes(1);
+      // no extra call yet — old 1s interval was replaced by 2s
+      expect(wsMock.send).toHaveBeenCalledTimes(2);
+
+      jest.advanceTimersByTime(1_000);
+      expect(wsMock.send).toHaveBeenCalledTimes(3);
 
       jest.useRealTimers();
     });
