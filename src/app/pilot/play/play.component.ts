@@ -23,7 +23,6 @@ import type { InboundMessage, OutboundMessage } from '../../core/models/websocke
 
 @Component({
   selector: 'app-play',
-  standalone: true,
   imports: [
     RouterLink,
     PlayerListComponent,

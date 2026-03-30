@@ -1,9 +1,10 @@
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import {
-  HttpClientTestingModule,
   HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { Subject } from 'rxjs';
 
@@ -14,7 +15,7 @@ import type { InboundMessage, GameStateSyncMessage } from '../core/models/websoc
 import type { Quiz, QuizDetail } from '../core/models/quiz.models';
 import type { PagedResponse } from '../core/models/api.models';
 
-@Component({ standalone: true, template: '' })
+@Component({ template: '' })
 class DummyComponent {}
 
 const mockQuiz = (overrides: Partial<Quiz> = {}): Quiz => ({
@@ -66,8 +67,10 @@ describe('GameCreateComponent', () => {
     messagesSubject = new Subject<InboundMessage>();
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, GameCreateComponent],
+      imports: [GameCreateComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter([
           { path: 'games', component: DummyComponent },
           { path: 'pilot/lobby', component: DummyComponent },

@@ -16,7 +16,6 @@ import type { Theme } from '../../core/models/question.models';
 
 @Component({
   selector: 'app-theme-list',
-  standalone: true,
   imports: [FormsModule, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [],

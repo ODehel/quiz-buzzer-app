@@ -22,7 +22,6 @@ import type { PagedResponse } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-question-list',
-  standalone: true,
   imports: [FormsModule, RouterLink, PaginatorComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

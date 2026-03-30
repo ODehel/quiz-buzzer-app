@@ -23,7 +23,6 @@ export interface GameRow extends Game {
 
 @Component({
   selector: 'app-game-list',
-  standalone: true,
   imports: [
     RouterLink,
     StatusBadgeComponent,

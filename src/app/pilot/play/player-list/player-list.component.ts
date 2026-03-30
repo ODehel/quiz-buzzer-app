@@ -9,7 +9,6 @@ import { GameStateService } from '../../../core/services/game-state.service';
 
 @Component({
   selector: 'app-player-list',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="col-header">

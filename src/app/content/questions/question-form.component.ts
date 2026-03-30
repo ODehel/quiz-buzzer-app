@@ -33,7 +33,6 @@ const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
 
 @Component({
   selector: 'app-question-form',
-  standalone: true,
   imports: [FormsModule, RouterLink, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

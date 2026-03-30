@@ -4,8 +4,7 @@ import {
   inject,
   signal,
   computed,
-  Output,
-  EventEmitter,
+  output,
   OnInit,
   OnDestroy,
 } from '@angular/core';
@@ -14,7 +13,6 @@ import { GameStateService } from '../../../core/services/game-state.service';
 
 @Component({
   selector: 'app-mcq-control',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div data-testid="mcq-control" class="flex-col gap-4">
@@ -180,9 +178,9 @@ import { GameStateService } from '../../../core/services/game-state.service';
 export class McqControlComponent implements OnInit, OnDestroy {
   protected readonly gs = inject(GameStateService);
 
-  @Output() readonly triggerChoices = new EventEmitter<void>();
-  @Output() readonly triggerCorrection = new EventEmitter<void>();
-  @Output() readonly triggerNext = new EventEmitter<void>();
+  readonly triggerChoices = output<void>();
+  readonly triggerCorrection = output<void>();
+  readonly triggerNext = output<void>();
 
   protected readonly choiceLabels = ['A', 'B', 'C', 'D'];
   protected readonly isWaitingChoices = signal(false);

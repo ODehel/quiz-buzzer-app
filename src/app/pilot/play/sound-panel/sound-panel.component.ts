@@ -4,8 +4,7 @@ import {
   inject,
   signal,
   computed,
-  Output,
-  EventEmitter,
+  output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,7 +16,6 @@ import type { OutboundMessage } from '../../../core/models/websocket.models';
 
 @Component({
   selector: 'app-sound-panel',
-  standalone: true,
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -134,9 +132,9 @@ export class SoundPanelComponent {
   protected readonly gs = inject(GameStateService);
   private readonly soundService = inject(SoundService);
 
-  @Output() readonly triggerSystemSound = new EventEmitter<OutboundMessage>();
-  @Output() readonly playSound = new EventEmitter<OutboundMessage>();
-  @Output() readonly triggerRanking = new EventEmitter<void>();
+  readonly triggerSystemSound = output<OutboundMessage>();
+  readonly playSound = output<OutboundMessage>();
+  readonly triggerRanking = output<void>();
 
   protected readonly sounds = signal<Sound[]>([]);
   protected readonly selectedId = signal<string | null>(null);

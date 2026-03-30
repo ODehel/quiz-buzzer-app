@@ -16,7 +16,7 @@ import type {
   GameStateSyncMessage,
 } from '../../core/models/websocket.models';
 
-@Component({ standalone: true, template: '' })
+@Component({ template: '' })
 class DummyComponent {}
 
 function buildGameStateSync(

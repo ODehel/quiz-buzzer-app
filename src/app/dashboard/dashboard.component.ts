@@ -21,7 +21,6 @@ import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
   imports: [StatusBadgeComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [],

@@ -2,7 +2,6 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 
 @Component({
   selector: 'app-confirm-dialog',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isOpen()) {

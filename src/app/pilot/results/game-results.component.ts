@@ -23,7 +23,6 @@ export interface ResultsData {
 
 @Component({
   selector: 'app-game-results',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div data-testid="game-results">

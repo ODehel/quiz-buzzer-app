@@ -2,15 +2,13 @@ import {
   Component,
   ChangeDetectionStrategy,
   inject,
-  Output,
-  EventEmitter,
+  output,
 } from '@angular/core';
 
 import { GameStateService } from '../../../core/services/game-state.service';
 
 @Component({
   selector: 'app-ranking',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="modal-overlay" data-testid="ranking-overlay">
@@ -126,7 +124,7 @@ import { GameStateService } from '../../../core/services/game-state.service';
 export class RankingComponent {
   protected readonly gs = inject(GameStateService);
 
-  @Output() readonly close = new EventEmitter<void>();
+  readonly close = output<void>();
 
   protected formatTime(ms: number): string {
     const seconds = Math.round(ms / 1000);

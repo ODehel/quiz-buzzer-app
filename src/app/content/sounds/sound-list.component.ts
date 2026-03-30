@@ -19,7 +19,6 @@ import type { PagedResponse } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-sound-list',
-  standalone: true,
   imports: [FormsModule, PaginatorComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [],

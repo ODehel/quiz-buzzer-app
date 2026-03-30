@@ -21,7 +21,6 @@ const MAX_BUZZER_SLOTS = 10;
 
 @Component({
   selector: 'app-lobby',
-  standalone: true,
   imports: [ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

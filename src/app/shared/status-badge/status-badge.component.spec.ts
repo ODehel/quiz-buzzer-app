@@ -5,7 +5,6 @@ import { StatusBadgeComponent } from './status-badge.component';
 import type { GameStatus } from '../../core/models/websocket.models';
 
 @Component({
-  standalone: true,
   imports: [StatusBadgeComponent],
   template: '<app-status-badge [status]="status" />',
 })

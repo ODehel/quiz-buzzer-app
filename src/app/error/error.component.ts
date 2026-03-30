@@ -3,7 +3,6 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-error',
-  standalone: true,
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [],

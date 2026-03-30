@@ -17,7 +17,6 @@ import type { Quiz, QuizDetail } from '../core/models/quiz.models';
 
 @Component({
   selector: 'app-game-create',
-  standalone: true,
   imports: [FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

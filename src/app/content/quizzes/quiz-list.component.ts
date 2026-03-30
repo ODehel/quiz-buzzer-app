@@ -19,7 +19,6 @@ import type { PagedResponse } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-quiz-list',
-  standalone: true,
   imports: [FormsModule, RouterLink, PaginatorComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

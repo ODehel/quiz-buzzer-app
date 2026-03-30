@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, Input, computed, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import type { GameStatus } from '../../core/models/websocket.models';
 
 interface BadgeConfig {
@@ -19,18 +19,14 @@ const STATUS_MAP: Record<GameStatus, BadgeConfig> = {
 
 @Component({
   selector: 'app-status-badge',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<span [class]="config().cssClass">{{ config().label }}</span>`,
   styles: [],
 })
 export class StatusBadgeComponent {
-  protected readonly _status = signal<GameStatus>('PENDING');
-
-  @Input({ required: true })
-  set status(value: GameStatus) { this._status.set(value); }
+  readonly status = input.required<GameStatus>();
 
   protected readonly config = computed<BadgeConfig>(() => {
-    return STATUS_MAP[this._status()] ?? { label: 'Inconnu', cssClass: 'badge' };
+    return STATUS_MAP[this.status()] ?? { label: 'Inconnu', cssClass: 'badge' };
   });
 }

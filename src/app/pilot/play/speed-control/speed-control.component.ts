@@ -4,8 +4,7 @@ import {
   inject,
   signal,
   computed,
-  Output,
-  EventEmitter,
+  output,
   OnInit,
   OnDestroy,
 } from '@angular/core';
@@ -14,7 +13,6 @@ import { GameStateService } from '../../../core/services/game-state.service';
 
 @Component({
   selector: 'app-speed-control',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div data-testid="speed-control" class="flex-col gap-4">
@@ -153,9 +151,9 @@ import { GameStateService } from '../../../core/services/game-state.service';
 export class SpeedControlComponent implements OnInit, OnDestroy {
   protected readonly gs = inject(GameStateService);
 
-  @Output() readonly validateAnswer = new EventEmitter<void>();
-  @Output() readonly invalidateAnswer = new EventEmitter<void>();
-  @Output() readonly triggerNext = new EventEmitter<void>();
+  readonly validateAnswer = output<void>();
+  readonly invalidateAnswer = output<void>();
+  readonly triggerNext = output<void>();
 
   protected readonly isWaitingValidation = signal(false);
   protected readonly isWaitingNext = signal(false);
