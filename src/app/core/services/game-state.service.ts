@@ -25,6 +25,7 @@ import type {
   BuzzerDisconnectedMessage,
   ConnectedBuzzersSyncMessage,
   QuestionResultSummaryMessage,
+  ExpectedAnswerMessage,
   IntermediateRankingMessage,
   GameStatusChangedMessage,
   McqPlayerResult,
@@ -69,6 +70,7 @@ export interface GameState {
   ranking: RankingEntry[] | null;
   questionResults: QuestionResult[];
   invalidatedPlayers: string[];
+  expectedAnswer: string | null;
 }
 
 const INITIAL_STATE: GameState = {
@@ -92,6 +94,7 @@ const INITIAL_STATE: GameState = {
   ranking: null,
   questionResults: [],
   invalidatedPlayers: [],
+  expectedAnswer: null,
 };
 
 const ACTIVE_STATUSES: GameStatus[] = [
@@ -275,6 +278,9 @@ export class GameStateService {
       case 'connected_buzzers_sync':
         this.handleConnectedBuzzersSync(msg as ConnectedBuzzersSyncMessage);
         break;
+      case 'expected_answer':
+        this.handleExpectedAnswer(msg as ExpectedAnswerMessage);
+        break;
       case 'question_result_summary':
         this.handleQuestionResultSummary(msg as QuestionResultSummaryMessage);
         break;
@@ -290,7 +296,7 @@ export class GameStateService {
   private handleGameStateSync(msg: GameStateSyncMessage): void {
     const { status, game_id, quiz_id, question_index, question_type,
             question_title, choices, participants, connected_buzzers,
-            started_at, time_limit } = msg;
+            started_at, time_limit, expected_answer } = msg;
 
     // CA-14 to CA-19: Update state based on sync status
     this._state.update((s) => ({
@@ -312,6 +318,7 @@ export class GameStateService {
           ? computeRemaining(started_at, time_limit)
           : null,
       questionResults: s.questionResults, // preserve across reconnection
+      expectedAnswer: expected_answer ?? null,
     }));
   }
 
@@ -320,6 +327,13 @@ export class GameStateService {
     this._state.update((s) => ({
       ...s,
       connectedBuzzers: msg.connected_buzzers,
+    }));
+  }
+
+  private handleExpectedAnswer(msg: ExpectedAnswerMessage): void {
+    this._state.update((s) => ({
+      ...s,
+      expectedAnswer: msg.correct_answer,
     }));
   }
 
@@ -340,6 +354,7 @@ export class GameStateService {
       allAnswered: false,
       currentBuzzer: null,
       invalidatedPlayers: [],
+      expectedAnswer: null,
     }));
   }
 
@@ -372,6 +387,7 @@ export class GameStateService {
       allAnswered: false,
       currentBuzzer: null,
       invalidatedPlayers: [],
+      expectedAnswer: null,
     }));
   }
 
