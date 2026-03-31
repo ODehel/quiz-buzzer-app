@@ -79,6 +79,7 @@ export class PlayComponent {
     switch (msg.type) {
       case 'question_title':
       case 'question_open':
+      case 'game_status_changed':
         this.isWaitingTrigger.set(false);
         break;
       case 'question_choices':

@@ -57,6 +57,7 @@ export type InboundMessage =
   | ConnectedBuzzersSyncMessage
   | QuestionResultSummaryMessage
   | IntermediateRankingMessage
+  | GameStatusChangedMessage
   | ErrorMessage
   | GenericInboundMessage;
 
@@ -191,6 +192,12 @@ export interface QuestionResultSummaryMessage {
 export interface IntermediateRankingMessage {
   type: 'intermediate_ranking';
   ranking: RankingEntry[];
+}
+
+export interface GameStatusChangedMessage {
+  type: 'game_status_changed';
+  status: GameStatus;
+  question_index?: number;
 }
 
 export interface ErrorMessage {
