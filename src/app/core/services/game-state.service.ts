@@ -26,6 +26,7 @@ import type {
   ConnectedBuzzersSyncMessage,
   QuestionResultSummaryMessage,
   IntermediateRankingMessage,
+  GameStatusChangedMessage,
   McqPlayerResult,
   SpeedPlayerResult,
 } from '../models/websocket.models';
@@ -277,6 +278,9 @@ export class GameStateService {
       case 'question_result_summary':
         this.handleQuestionResultSummary(msg as QuestionResultSummaryMessage);
         break;
+      case 'game_status_changed':
+        this.handleGameStatusChanged(msg as GameStatusChangedMessage);
+        break;
       case 'intermediate_ranking':
         this.handleIntermediateRanking(msg as IntermediateRankingMessage);
         break;
@@ -459,6 +463,14 @@ export class GameStateService {
           ranking: msg.ranking,
         },
       ],
+    }));
+  }
+
+  private handleGameStatusChanged(msg: GameStatusChangedMessage): void {
+    this._state.update((s) => ({
+      ...s,
+      status: msg.status,
+      questionIndex: msg.question_index ?? s.questionIndex,
     }));
   }
 
