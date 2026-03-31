@@ -41,22 +41,34 @@ export class LobbyComponent {
   protected readonly quizName = signal<string | null>(null);
   protected readonly isStarting = signal(false);
   protected readonly isDeleting = signal(false);
+
+  /** Manual buzzer-to-participant assignments: participantOrder → buzzerUsername */
+  protected readonly assignments = signal<Record<number, string>>({});
+
+  protected readonly assignedCount = computed(() => {
+    const a = this.assignments();
+    const connected = this.gs.connectedBuzzers();
+    // Only count assignments whose buzzer is still connected
+    return Object.values(a).filter((b) => connected.includes(b)).length;
+  });
+
   protected readonly isReady = computed(
-    () => this.gs.connectedBuzzers().length >= this.gs.state().participants.length
+    () => this.assignedCount() >= this.gs.state().participants.length
   );
 
   protected readonly readinessPercent = computed(() => {
     const participants = this.gs.state().participants.length;
     if (participants === 0) return 100;
-    return Math.min(100, (this.gs.connectedBuzzers().length / participants) * 100);
+    return Math.min(100, (this.assignedCount() / participants) * 100);
   });
 
   protected readonly participantsWithBuzzer = computed(() => {
     const participants = this.gs.state().participants;
-    const buzzers = this.gs.connectedBuzzers();
-    return participants.map((p, i) => ({
+    const a = this.assignments();
+    const connected = this.gs.connectedBuzzers();
+    return participants.map((p) => ({
       ...p,
-      buzzerUsername: buzzers[i] ?? null,
+      buzzerUsername: a[p.order] && connected.includes(a[p.order]) ? a[p.order] : null,
     }));
   });
 
@@ -67,6 +79,30 @@ export class LobbyComponent {
       username: buzzers[i] ?? null,
     }));
   });
+
+  /** Returns the list of connected buzzers not yet assigned to another participant */
+  protected availableBuzzersFor(participantOrder: number): string[] {
+    const connected = this.gs.connectedBuzzers();
+    const a = this.assignments();
+    const assignedToOthers = new Set(
+      Object.entries(a)
+        .filter(([order]) => Number(order) !== participantOrder)
+        .map(([, buzzer]) => buzzer)
+    );
+    return connected.filter((b) => !assignedToOthers.has(b));
+  }
+
+  protected onAssignBuzzer(participantOrder: number, buzzerUsername: string | null): void {
+    this.assignments.update((a) => {
+      const next = { ...a };
+      if (buzzerUsername) {
+        next[participantOrder] = buzzerUsername;
+      } else {
+        delete next[participantOrder];
+      }
+      return next;
+    });
+  }
 
   constructor() {
     // CA-2: redirect if game already started
