@@ -50,7 +50,7 @@
       [class.ready]="isReady()"
       data-testid="readiness-label"
     >
-      {{ gs.connectedBuzzers().length }} / {{ gs.state().participants.length }} buzzers connectés
+      {{ assignedCount() }} / {{ gs.state().participants.length }} buzzers assignés
     </span>
   </div>
   <div class="bar-track">
@@ -76,6 +76,18 @@
       <div class="participant-row" data-testid="participant-item">
         <span class="p-order">{{ entry.order }}</span>
         <span class="p-name">{{ entry.name }}</span>
+        <select
+          class="buzzer-select"
+          [class.assigned]="entry.buzzerUsername"
+          [value]="entry.buzzerUsername ?? ''"
+          (change)="onAssignBuzzer(entry.order, $any($event.target).value || null)"
+          data-testid="buzzer-select"
+        >
+          <option value="">— Choisir un buzzer —</option>
+          @for (b of availableBuzzersFor(entry.order); track b) {
+            <option [value]="b" [selected]="b === entry.buzzerUsername">{{ b }}</option>
+          }
+        </select>
         @if (entry.buzzerUsername) {
           <div class="buzzer-tag connected" data-testid="buzzer-status">
             <div class="buzzer-tag-dot"></div>
@@ -84,7 +96,7 @@
         } @else {
           <div class="buzzer-tag offline" data-testid="buzzer-status">
             <div class="buzzer-tag-dot"></div>
-            Non connecté
+            Non assigné
           </div>
         }
       </div>

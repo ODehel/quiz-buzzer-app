@@ -161,33 +161,54 @@ describe('LobbyComponent', () => {
     expect(count.textContent).toContain('3 participants');
   });
 
-  // ── CA-6: Readiness bar color ──
-  it('CA-6 — readiness bar is orange when buzzers < participants', () => {
+  // ── CA-6: Readiness bar color (now based on manual assignments) ──
+  it('CA-6 — readiness bar is orange when assigned buzzers < participants', () => {
     createComponent(['buzzer-1']);
+
+    // Assign only 1 buzzer manually
+    component.onAssignBuzzer(1, 'buzzer-1');
+    fixture.detectChanges();
 
     const bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
     expect(bar.classList.contains('insufficient')).toBe(true);
     expect(bar.classList.contains('ready')).toBe(false);
   });
 
-  it('CA-6 — readiness bar is green when buzzers >= participants', () => {
+  it('CA-6 — readiness bar is green when all participants have assigned buzzers', () => {
     createComponent(['b1', 'b2', 'b3']);
+
+    // Manually assign all 3 buzzers
+    component.onAssignBuzzer(1, 'b1');
+    component.onAssignBuzzer(2, 'b2');
+    component.onAssignBuzzer(3, 'b3');
+    fixture.detectChanges();
 
     const bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
     expect(bar.classList.contains('ready')).toBe(true);
     expect(bar.classList.contains('insufficient')).toBe(false);
   });
 
+  it('CA-6 — readiness bar is orange with no assignments even if buzzers connected', () => {
+    createComponent(['b1', 'b2', 'b3']);
+
+    // No manual assignments
+    const bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
+    expect(bar.classList.contains('insufficient')).toBe(true);
+  });
+
   // ── CA-7: Readiness label ──
-  it('CA-7 — readiness label shows buzzer count and participant count', () => {
+  it('CA-7 — readiness label shows assigned count and participant count', () => {
     createComponent(['buzzer-1']);
 
+    component.onAssignBuzzer(1, 'buzzer-1');
+    fixture.detectChanges();
+
     const label = fixture.nativeElement.querySelector('[data-testid="readiness-label"]');
-    expect(label.textContent).toContain('1 / 3 buzzers connectés');
+    expect(label.textContent).toContain('1 / 3 buzzers assignés');
   });
 
   // ── CA-8: Real-time update (simulated via signal change) ──
-  it('CA-8 — readiness bar updates when connectedBuzzers changes', () => {
+  it('CA-8 — readiness bar updates when buzzers are assigned', () => {
     createComponent([]);
 
     let bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
@@ -199,31 +220,59 @@ describe('LobbyComponent', () => {
     );
     fixture.detectChanges();
 
+    // Still insufficient — no assignments yet
+    bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
+    expect(bar.classList.contains('insufficient')).toBe(true);
+
+    // Manually assign all buzzers
+    component.onAssignBuzzer(1, 'b1');
+    component.onAssignBuzzer(2, 'b2');
+    component.onAssignBuzzer(3, 'b3');
+    fixture.detectChanges();
+
     bar = fixture.nativeElement.querySelector('[data-testid="readiness-bar"]');
     expect(bar.classList.contains('ready')).toBe(true);
   });
 
-  // ── CA-9: Participants with buzzer association ──
-  it('CA-9 — displays participants with order, name, and buzzer indicator', () => {
+  // ── CA-9: Participants with manual buzzer assignment ──
+  it('CA-9 — displays a buzzer select dropdown for each participant', () => {
+    createComponent(['buzzer-1', 'buzzer-2']);
+
+    const selects = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-select"]');
+    expect(selects.length).toBe(3);
+
+    // All connected buzzers should appear as options
+    const options = selects[0].querySelectorAll('option');
+    // First option is the placeholder "— Choisir un buzzer —"
+    expect(options[0].textContent).toContain('Choisir un buzzer');
+    expect(options.length).toBeGreaterThan(1);
+  });
+
+  it('CA-9 — manual assignment updates participant buzzer status', () => {
     createComponent(['buzzer-1']);
 
-    const items = fixture.nativeElement.querySelectorAll('[data-testid="participant-item"]');
-    expect(items.length).toBe(3);
+    component.onAssignBuzzer(1, 'buzzer-1');
+    fixture.detectChanges();
 
+    const items = fixture.nativeElement.querySelectorAll('[data-testid="participant-item"]');
     const firstItem = items[0];
     expect(firstItem.textContent).toContain('1');
     expect(firstItem.textContent).toContain('Alice');
     expect(firstItem.textContent).toContain('buzzer-1');
   });
 
-  // ── CA-10: Participants without buzzer show "Non connecté" ──
-  it('CA-10 — participants without buzzer show "Non connecté"', () => {
+  // ── CA-10: Participants without buzzer show "Non assigné" ──
+  it('CA-10 — participants without assigned buzzer show "Non assigné"', () => {
     createComponent(['buzzer-1']);
+
+    // Assign only to first participant
+    component.onAssignBuzzer(1, 'buzzer-1');
+    fixture.detectChanges();
 
     const statuses = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-status"]');
     expect(statuses[0].textContent.trim()).toBe('buzzer-1');
-    expect(statuses[1].textContent.trim()).toBe('Non connecté');
-    expect(statuses[2].textContent.trim()).toBe('Non connecté');
+    expect(statuses[1].textContent.trim()).toBe('Non assigné');
+    expect(statuses[2].textContent.trim()).toBe('Non assigné');
 
     expect(statuses[1].classList.contains('offline')).toBe(true);
   });
@@ -406,6 +455,9 @@ describe('LobbyComponent', () => {
   it('CA-23 — game_state_sync with PENDING keeps lobby displayed', () => {
     createComponent(['b1']);
 
+    // Assign b1 before reconnect
+    component.onAssignBuzzer(1, 'b1');
+
     messagesSubject.next(
       buildGameStateSync({
         status: 'PENDING',
@@ -417,15 +469,18 @@ describe('LobbyComponent', () => {
         ],
       })
     );
+
+    // Assign b2 after reconnect
+    component.onAssignBuzzer(2, 'b2');
     fixture.detectChanges();
 
     // Lobby is still displayed
     const header = fixture.nativeElement.querySelector('[data-testid="lobby-header"]');
     expect(header).toBeTruthy();
 
-    // Buzzers updated
+    // Readiness updated with assignments
     const label = fixture.nativeElement.querySelector('[data-testid="readiness-label"]');
-    expect(label.textContent).toContain('2 / 3 buzzers connectés');
+    expect(label.textContent).toContain('2 / 3 buzzers assignés');
   });
 
   // ── CA-24: game_state_sync with OPEN triggers navigation ──
@@ -436,6 +491,62 @@ describe('LobbyComponent', () => {
     fixture.detectChanges();
 
     expect(router.navigate).toHaveBeenCalledWith(['/pilot/play']);
+  });
+
+  // ── Manual assignment: unassign buzzer ──
+  it('unassigning a buzzer removes the assignment', () => {
+    createComponent(['b1', 'b2']);
+
+    component.onAssignBuzzer(1, 'b1');
+    component.onAssignBuzzer(2, 'b2');
+    fixture.detectChanges();
+    expect(component.assignedCount()).toBe(2);
+
+    component.onAssignBuzzer(1, null);
+    fixture.detectChanges();
+    expect(component.assignedCount()).toBe(1);
+
+    const statuses = fixture.nativeElement.querySelectorAll('[data-testid="buzzer-status"]');
+    expect(statuses[0].textContent.trim()).toBe('Non assigné');
+  });
+
+  // ── Manual assignment: disconnected buzzer no longer counts ──
+  it('assignment to a disconnected buzzer does not count as ready', () => {
+    createComponent(['b1']);
+
+    component.onAssignBuzzer(1, 'b1');
+    fixture.detectChanges();
+    expect(component.assignedCount()).toBe(1);
+
+    // Buzzer disconnects
+    messagesSubject.next(
+      buildGameStateSync({ connected_buzzers: [] })
+    );
+    fixture.detectChanges();
+    expect(component.assignedCount()).toBe(0);
+  });
+
+  // ── Manual assignment: availableBuzzersFor excludes assigned buzzers ──
+  it('availableBuzzersFor excludes buzzers assigned to other participants', () => {
+    createComponent(['b1', 'b2', 'b3']);
+
+    component.onAssignBuzzer(1, 'b1');
+    component.onAssignBuzzer(2, 'b2');
+
+    const available = component.availableBuzzersFor(3);
+    expect(available).toContain('b3');
+    expect(available).not.toContain('b1');
+    expect(available).not.toContain('b2');
+  });
+
+  it('availableBuzzersFor includes the buzzer currently assigned to that participant', () => {
+    createComponent(['b1', 'b2']);
+
+    component.onAssignBuzzer(1, 'b1');
+
+    const available = component.availableBuzzersFor(1);
+    expect(available).toContain('b1');
+    expect(available).toContain('b2');
   });
 
   // ── Delete cancelled does not call API ──
