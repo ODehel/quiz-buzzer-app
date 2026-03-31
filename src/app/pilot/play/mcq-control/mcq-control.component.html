@@ -26,6 +26,14 @@
     {{ gs.state().questionTitle }}
   </div>
 
+  <!-- Expected answer (admin only) -->
+  @if (gs.state().expectedAnswer && gs.status() !== 'QUESTION_CLOSED') {
+    <div style="background:var(--amber-dim);border:1px solid #6a3a00;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px" data-testid="expected-answer">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--amber);white-space:nowrap">R&eacute;ponse attendue</span>
+      <span style="font-size:15px;font-weight:700;color:var(--amber)">{{ gs.state().expectedAnswer }}</span>
+    </div>
+  }
+
   <!-- QUESTION_TITLE state: show trigger choices button -->
   @if (gs.status() === 'QUESTION_TITLE') {
     <div data-testid="title-phase">
